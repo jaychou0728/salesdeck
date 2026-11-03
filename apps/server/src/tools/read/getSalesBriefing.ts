@@ -47,8 +47,8 @@ export const getSalesBriefing: ToolDefinition<GetSalesBriefingInput, unknown> = 
       .map((row) => ({
         type: "inventory_risk",
         severity: "warning",
-        entityRef: { kind: "product", id: row.productId, name: `${row.sku} ${row.name}`, warehouseId: row.warehouseId },
-        why: `可用 ${row.onHand - row.reserved}，低于安全库存 ${row.safetyStock}`,
+        entityRef: { kind: "product", id: row.productId, name: row.name, warehouseId: row.warehouseId },
+        why: `${row.sku} 可用 ${row.onHand - row.reserved}，低于安全库存 ${row.safetyStock}`,
         suggestedAction: "检查拆仓方案或安排补货",
       }));
     const expiring = ctx.db
