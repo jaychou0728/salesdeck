@@ -1779,14 +1779,14 @@ export function assertQuoteConvertible(quote: { status: string; validUntil: numb
   }
 }
 
-const ORDER_TRANSITIONS = {
+export type OrderStatus = "pending_approval" | "reserved" | "fulfilled" | "cancelled";
+
+const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending_approval: ["reserved", "cancelled"],
   reserved: ["fulfilled", "cancelled"],
   fulfilled: [],
   cancelled: [],
-} as const;
-
-export type OrderStatus = keyof typeof ORDER_TRANSITIONS;
+};
 
 export function assertOrderTransition(from: OrderStatus, to: OrderStatus) {
   if (!ORDER_TRANSITIONS[from].includes(to)) {
