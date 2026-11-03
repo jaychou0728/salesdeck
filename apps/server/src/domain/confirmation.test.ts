@@ -46,6 +46,40 @@ describe("confirmation tokens", () => {
       "TOKEN_EXPIRED",
     );
   });
+
+  it("rejects a token issued for a different tool", () => {
+    const { db } = makeTestDb();
+    const payload = { quoteId: "q_1" };
+    const { token } = issueConfirmationToken(db, { actorId: "u_sales_lin", toolName: "create_quote", payload });
+    expectAppErrorCode(
+      () => consumeConfirmationToken(db, token, { actorId: "u_sales_lin", toolName: "convert_quote_to_order", payload }),
+      "TOKEN_EXPIRED",
+    );
+  });
+
+  it("rejects a token consumed with a different payload", () => {
+    const { db } = makeTestDb();
+    const payloadA = { quoteId: "q_1" };
+    const payloadB = { quoteId: "q_2" };
+    const { token } = issueConfirmationToken(db, { actorId: "u_sales_lin", toolName: "convert_quote_to_order", payload: payloadA });
+    expectAppErrorCode(
+      () => consumeConfirmationToken(db, token, { actorId: "u_sales_lin", toolName: "convert_quote_to_order", payload: payloadB }),
+      "TOKEN_EXPIRED",
+    );
+  });
+
+  it("rejects a token with a tampered signature", () => {
+    const { db } = makeTestDb();
+    const payload = { quoteId: "q_1" };
+    const { token } = issueConfirmationToken(db, { actorId: "u_sales_lin", toolName: "convert_quote_to_order", payload });
+    const [id, expiresAt, signature] = token.split(".");
+    const flippedFirst = signature[0] === "0" ? "1" : "0";
+    const tampered = `${id}.${expiresAt}.${flippedFirst}${signature.slice(1)}`;
+    expectAppErrorCode(
+      () => consumeConfirmationToken(db, tampered, { actorId: "u_sales_lin", toolName: "convert_quote_to_order", payload }),
+      "TOKEN_EXPIRED",
+    );
+  });
 });
 
 describe("idempotency", () => {
@@ -53,6 +87,47 @@ describe("idempotency", () => {
     const { db } = makeTestDb();
     const first = withIdempotency(db, { key: "idem-1", actorId: "u_sales_lin", toolName: "create_quote", request: { a: 1 } }, () => ({ quoteId: "q_1" }));
     const second = withIdempotency(db, { key: "idem-1", actorId: "u_sales_lin", toolName: "create_quote", request: { a: 1 } }, () => ({ quoteId: "q_2" }));
+    expect(first.replayed).toBe(false);
+    expect(second.replayed).toBe(true);
+    expect(second.value).toEqual({ quoteId: "q_1" });
+  });
+
+  it("throws CONFLICT when the same key is reused with a different request", () => {
+    const { db } = makeTestDb();
+    withIdempotency(
+      db,
+      { key: "idem-conflict", actorId: "u_sales_lin", toolName: "create_quote", request: { a: 1 } },
+      () => ({ quoteId: "q_1" }),
+    );
+    expectAppErrorCode(
+      () =>
+        withIdempotency(
+          db,
+          { key: "idem-conflict", actorId: "u_sales_lin", toolName: "create_quote", request: { a: 2 } },
+          () => ({ quoteId: "q_2" }),
+        ),
+      "CONFLICT",
+    );
+  });
+
+  it("does not call fn again on replay", () => {
+    const { db } = makeTestDb();
+    let counter = 0;
+    const fn = () => {
+      counter += 1;
+      return { quoteId: `q_${counter}` };
+    };
+    const first = withIdempotency(
+      db,
+      { key: "idem-replay", actorId: "u_sales_lin", toolName: "create_quote", request: { a: 1 } },
+      fn,
+    );
+    const second = withIdempotency(
+      db,
+      { key: "idem-replay", actorId: "u_sales_lin", toolName: "create_quote", request: { a: 1 } },
+      fn,
+    );
+    expect(counter).toBe(1);
     expect(first.replayed).toBe(false);
     expect(second.replayed).toBe(true);
     expect(second.value).toEqual({ quoteId: "q_1" });

@@ -1,5 +1,5 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { AppError } from "@salespilot/shared";
 import type { Db } from "../db/client.js";
 import { confirmationTokens } from "../db/schema.js";
@@ -51,15 +51,19 @@ export function consumeConfirmationToken(
     !validSignature ||
     !row ||
     row.usedAt !== null ||
-    row.expiresAt < now ||
+    row.expiresAt <= now ||
     row.actorId !== input.actorId ||
     row.toolName !== input.toolName ||
     row.payloadHash !== payloadHash
   ) {
     throw new AppError("TOKEN_EXPIRED", "确认令牌无效、已使用或已过期", undefined, false, "请重新生成预览");
   }
-  db.update(confirmationTokens)
+  const result = db
+    .update(confirmationTokens)
     .set({ usedAt: now })
-    .where(eq(confirmationTokens.id, id))
+    .where(and(eq(confirmationTokens.id, id), isNull(confirmationTokens.usedAt)))
     .run();
+  if (result.changes !== 1) {
+    throw new AppError("TOKEN_EXPIRED", "确认令牌无效、已使用或已过期", undefined, false, "请重新生成预览");
+  }
 }
