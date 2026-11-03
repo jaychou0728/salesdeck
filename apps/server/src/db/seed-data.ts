@@ -6,7 +6,7 @@ export const users = [
 ];
 
 export const customers = [
-  { id: "c_huachen", name: "华辰设计", industry: "建筑设计", level: "A" as const, ownerId: "u_sales_lin", region: "上海", creditLimitCents: yuan(50_000), creditUsedCents: yuan(46_000), paymentTerms: "月结 30 天", status: "active" },
+  { id: "c_huachen", name: "华辰设计", industry: "建筑设计", level: "A" as const, ownerId: "u_sales_lin", region: "上海", creditLimitCents: yuan(1_200_000), creditUsedCents: yuan(1_104_000), paymentTerms: "月结 30 天", status: "active" },
   { id: "c_yuanshan", name: "远山制造", industry: "智能制造", level: "B" as const, ownerId: "u_sales_lin", region: "苏州", creditLimitCents: yuan(30_000), creditUsedCents: yuan(8_000), paymentTerms: "月结 45 天", status: "active" },
   { id: "c_haichuan", name: "海川物流", industry: "物流", level: "B" as const, ownerId: "u_sales_lin", region: "成都", creditLimitCents: yuan(20_000), creditUsedCents: yuan(15_500), paymentTerms: "月结 30 天", status: "active" },
   { id: "c_lingyun", name: "凌云科技", industry: "软件", level: "A" as const, ownerId: "u_sales_lin", region: "上海", creditLimitCents: yuan(80_000), creditUsedCents: yuan(12_000), paymentTerms: "月结 60 天", status: "active" },

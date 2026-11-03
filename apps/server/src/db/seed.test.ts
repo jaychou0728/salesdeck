@@ -73,8 +73,8 @@ describe("seed", () => {
     const { db } = makeTestDb();
     seedDatabase(db);
     const huachen = db.select().from(customers).where(eq(customers.id, "c_huachen")).get();
-    expect(huachen?.creditLimitCents).toBe(5_000_000);
-    expect(huachen?.creditUsedCents).toBe(4_600_000);
+    expect(huachen?.creditLimitCents).toBe(120_000_000);
+    expect(huachen?.creditUsedCents).toBe(110_400_000);
     const x1 = db.select().from(products).where(eq(products.sku, "X1")).get();
     const rows = db.select().from(inventory).where(eq(inventory.productId, x1!.id)).all();
     expect(rows.reduce((sum, row) => sum + row.onHand - row.reserved, 0)).toBe(180);

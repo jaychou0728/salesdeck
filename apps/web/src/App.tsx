@@ -9,6 +9,23 @@ export function App() {
   const { actorId, setActor } = useAppStore();
   const [tab, setTab] = useState<"trace" | "business">("trace");
   const [briefingOpen, setBriefingOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  async function resetDemo() {
+    setResetting(true);
+    try {
+      const response = await fetch("/api/demo/reset", { method: "POST" });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        alert(body?.error?.message ?? "重置失败：请确认 DEMO_MODE=true");
+        return;
+      }
+      window.location.reload();
+    } finally {
+      setResetting(false);
+    }
+  }
+
   return (
     <div className="flex h-screen flex-col">
       <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-6">
@@ -18,6 +35,9 @@ export function App() {
           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700">Mock / DeepSeek</span>
         </div>
         <div className="flex items-center gap-2">
+          <button className="rounded-lg border border-slate-200 px-2 py-1 text-xs" onClick={resetDemo} disabled={resetting}>
+            {resetting ? "重置中…" : "重置演示"}
+          </button>
           <button className="rounded-lg border border-slate-200 px-2 py-1 text-xs" onClick={() => setBriefingOpen(true)}>晨报</button>
           <select className="rounded-lg border border-slate-200 px-2 py-1 text-xs" value={actorId} onChange={(event) => setActor(event.target.value)}>
             <option value="u_sales_lin">销售小林</option>

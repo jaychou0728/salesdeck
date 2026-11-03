@@ -17,6 +17,7 @@ export class DeepSeekProvider implements ChatProvider {
       messages: request.messages as never,
       tools: request.tools as never,
       stream: request.stream ?? false,
+      max_tokens: 800,
     } as never);
     return completion as never;
   }

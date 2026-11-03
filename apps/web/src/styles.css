@@ -5,3 +5,6 @@
 :root { color-scheme: light; }
 body { @apply bg-slate-50 text-slate-900 antialiased; }
 * { box-sizing: border-box; }
+
+.prose table { display: block; overflow-x: auto; white-space: nowrap; }
+.prose pre { white-space: pre-wrap; }
