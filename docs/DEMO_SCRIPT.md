@@ -121,7 +121,7 @@ curl -X POST http://127.0.0.1:3000/api/approvals/<approvalId>/decide \
 
 **话术**：
 > 每一步都有工具名、入参、出参、状态和耗时，写操作还带令牌与幂等标记。这些事件同时落库，可以按 traceId 回放，方便复盘和审计。
-> 工程侧：73 个服务端测试、2 条 Playwright E2E、25 条 Agent 评测全部通过；OpenAI 兼容网关可直接用 curl 调；Docker 配置已就绪（本机未装 Docker，尚未实机验证）。
+> 工程侧：74 个服务端测试、2 条 Playwright E2E、25 条 Agent 评测全部通过；OpenAPI 暴露 15 条路径；OpenAI 兼容网关可直接用 curl 调；Docker 配置已就绪（本机未装 Docker，尚未实机验证）。
 > 以上就是 SalesPilot：一个敢把每一步都给经理看的 AI 销售同事。
 
 ---
