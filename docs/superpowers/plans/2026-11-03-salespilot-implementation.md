@@ -757,7 +757,9 @@ pnpm --filter @salespilot/shared test
 pnpm -r --if-present run typecheck
 ```
 
-Expected：shared test 5 passed（1 个 workspace smoke + 4 个 schema 测试）；`packages/shared/dist/index.js` 与 `index.d.ts` 存在；所有包 typecheck 通过。
+Expected：shared test 6 passed（1 个 workspace smoke + 4 个 schema 测试 + 1 个参数化守卫测试）；`packages/shared/dist/index.js` 与 `index.d.ts` 存在；所有包 typecheck 通过。
+
+守卫测试覆盖三个写 Schema（CreateQuote / ConvertQuoteToOrder / CreateAfterSalesTicket）：只给 token 拒绝、只给 idempotencyKey 拒绝、两者都给通过。
 
 - [ ] **Step 5: Commit**
 
@@ -2294,6 +2296,8 @@ import { inventory, products, warehouses } from "../../db/schema.js";
 import { available, planAllocation } from "../../domain/inventory.js";
 import type { ToolDefinition } from "../types.js";
 
+> 契约字段必须生效：`input.region` 用于筛选仓库；`input.needByDate` 与 `etaDays` 比较（`daysUntil = Math.ceil((Date.parse(date) - Date.now()) / 86400000)`）；区域内无法满足时，把其他仓作为 alternatives 返回，不能静默忽略这两个字段。
+
 export const checkInventory: ToolDefinition<CheckInventoryInput, unknown> = {
   name: "check_inventory",
   description: "查询 SKU 在多仓的可用库存、ETA 和拆仓方案；可判断能否满足数量。",
@@ -2979,6 +2983,8 @@ import { GetSalesBriefingInput, ok } from "@salespilot/shared";
 import { customers, inventory, products, quotes } from "../../db/schema.js";
 import type { ToolDefinition } from "../types.js";
 
+> 契约字段必须生效：`input.date` 作为参考日，`now = input.date ? Date.parse(input.date + "T23:59:59") : Date.now()`，用于报价到期窗口；不要忽略该字段。
+
 export const getSalesBriefing: ToolDefinition<GetSalesBriefingInput, unknown> = {
   name: "get_sales_briefing",
   description: "生成销售晨报：信用风险、库存风险、48 小时内到期报价。销售只能看自己，经理可看团队。",
@@ -3351,7 +3357,9 @@ function ranks(scores: number[]): number[] {
     .map((item) => item.index);
 }
 
-export function retrieve(db: Db, query: string, topK = 5): { chunks: Citation[]; hasSufficientEvidence: boolean } {
+> 契约字段必须生效：`retrieve(db, query, topK, docTypes?)`；当 `docTypes` 非空时，按 `knowledgeDocs.type` 过滤后再排序，不能忽略该字段。
+
+export function retrieve(db: Db, query: string, topK = 5, docTypes?: string[]): { chunks: Citation[]; hasSufficientEvidence: boolean } {
   const rows = db
     .select({
       chunkId: knowledgeChunks.id,
