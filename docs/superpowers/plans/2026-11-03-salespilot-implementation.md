@@ -2044,7 +2044,7 @@ export function consumeConfirmationToken(
 cd apps/server && pnpm test
 ```
 
-Expected：confirmation 4 passed（一次性消费、其他 actor、过期、幂等重放）；typecheck clean。
+Expected：confirmation/idempotency 9 passed（一次性、其他 actor、过期、CONFLICT、重放不调用 fn、错误 tool/payload、签名篡改等）；typecheck clean。`consumeConfirmationToken` 使用 `used_at IS NULL` 条件更新 + `changes` 检查；`withIdempotency` 在事务中执行并拒绝 async 回调。
 
 - [ ] **Step 5: Commit**
 
@@ -2119,6 +2119,30 @@ describe("read tools", () => {
     const result = await executeTool(readTools.find((t) => t.name === "get_pricing")!, c, { customerId: "c_huachen", items: [{ sku: "X1", quantity: 120 }] });
     expect(result.model.ok).toBe(true);
     if (result.model.ok) expect((result.model.data as any).lines[0].finalPriceCents).toBe(724_680);
+  });
+
+  it("finds customers by contact name and marks ambiguity", async () => {
+    const c = ctx(sales);
+    const result = await executeTool(readTools.find((t) => t.name === "search_customers")!, c, { query: "张总" });
+    expect(result.model.ok).toBe(true);
+    if (result.model.ok) {
+      expect((result.model.data as any).customers).toHaveLength(2);
+      expect((result.model.data as any).ambiguous).toBe(true);
+    }
+  });
+
+  it("honors region and needByDate filters", async () => {
+    const c = ctx(sales);
+    const region = await executeTool(readTools.find((t) => t.name === "check_inventory")!, c, { skuQuery: "X1", quantity: 120, region: "苏州" });
+    expect(region.model.ok).toBe(true);
+    if (region.model.ok) {
+      expect((region.model.data as any).allocations.every((a: any) => a.warehouseId === "w_sz")).toBe(true);
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const byDate = await executeTool(readTools.find((t) => t.name === "check_inventory")!, c, { skuQuery: "X1", quantity: 120, needByDate: today });
+    expect(byDate.model.ok).toBe(true);
+    if (byDate.model.ok) expect((byDate.model.data as any).canFulfill).toBe(false);
   });
 });
 ```
@@ -2471,7 +2495,7 @@ export { executeTool, toolSpecs } from "./registry.js";
 cd apps/server && pnpm test
 ```
 
-Expected：read tools 4 passed。
+Expected：read tools 6 passed（搜索、拆仓、越权、定价、联系人歧义、region/needByDate 过滤）。
 
 - [ ] **Step 5: Commit**
 
@@ -2691,8 +2715,8 @@ export const createQuote: ToolDefinition<CreateQuoteInput, unknown> = {
       };
     }
 
-    consumeConfirmationToken(ctx.db, input.confirmationToken!, { actorId: ctx.actor.id, toolName: "create_quote", payload: businessPayload(input) });
     const result = withIdempotency(ctx.db, { key: input.idempotencyKey!, actorId: ctx.actor.id, toolName: "create_quote", request: businessPayload(input) }, () => {
+      consumeConfirmationToken(ctx.db, input.confirmationToken!, { actorId: ctx.actor.id, toolName: "create_quote", payload: businessPayload(input) });
       const quoteId = `q_${randomUUID()}`;
       const status = linePreviews.some((line) => line.belowFloor) ? "pending_approval" : "approved";
       ctx.db.insert(quotes).values({
@@ -2864,8 +2888,8 @@ export const convertQuoteToOrder: ToolDefinition<ConvertQuoteToOrderInput, unkno
         artifacts: [{ kind: "quote", toolName: "convert_quote_to_order", title: "转订单预览", payload: { preview, input: businessPayload(input) }, confirmationToken: token }],
       };
     }
-    consumeConfirmationToken(ctx.db, input.confirmationToken!, { actorId: ctx.actor.id, toolName: "convert_quote_to_order", payload: businessPayload(input) });
     const result = withIdempotency(ctx.db, { key: input.idempotencyKey!, actorId: ctx.actor.id, toolName: "convert_quote_to_order", request: businessPayload(input) }, () => {
+      consumeConfirmationToken(ctx.db, input.confirmationToken!, { actorId: ctx.actor.id, toolName: "convert_quote_to_order", payload: businessPayload(input) });
       if (credit.requiresApproval) {
         const approvalId = createApproval(ctx, {
           type: "order_conversion",
@@ -2993,8 +3017,8 @@ export const createAfterSalesTicket: ToolDefinition<CreateAfterSalesTicketInput,
       const { token, expiresAt } = issueConfirmationToken(ctx.db, { actorId: ctx.actor.id, toolName: "create_after_sales_ticket", payload: businessPayload(input) });
       return { model: ok({ status: "pending_confirmation", preview, expiresAt }), artifacts: [{ kind: "ticket", toolName: "create_after_sales_ticket", title: "售后工单预览", payload: { preview, input: businessPayload(input) }, confirmationToken: token }] };
     }
-    consumeConfirmationToken(ctx.db, input.confirmationToken!, { actorId: ctx.actor.id, toolName: "create_after_sales_ticket", payload: businessPayload(input) });
     const result = withIdempotency(ctx.db, { key: input.idempotencyKey!, actorId: ctx.actor.id, toolName: "create_after_sales_ticket", request: businessPayload(input) }, () => {
+      consumeConfirmationToken(ctx.db, input.confirmationToken!, { actorId: ctx.actor.id, toolName: "create_after_sales_ticket", payload: businessPayload(input) });
       const ticketId = `tk_${randomUUID()}`;
       ctx.db.insert(afterSalesTickets).values({
         id: ticketId,
