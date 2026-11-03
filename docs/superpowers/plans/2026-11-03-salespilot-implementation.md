@@ -3139,6 +3139,8 @@ cd apps/server && pnpm test
 
 Expected：write tools 5 passed（报价预览不泄露令牌、低于底线审批、信用不足审批、审批后建单、晨报）。若 `createOrderFromQuote` 的库存版本查询报错，按上方注释改为 `and(eq(warehouseId), eq(productId))` 精确读取。
 
+> 实际实现补充：convert dry-run 计算 `stockChecks` 并在库存不足时返回 `OUT_OF_STOCK`（不发 token）；`quote_price` 拒绝会回写 `quotes.status = rejected`；未知 SKU 返回 `NOT_FOUND`；晨报团队范围按 `users.team_id` 过滤；售后校验 `orderId` 归属；新增 8 条 edge 测试；总测试 51。
+
 - [ ] **Step 5: Commit**
 
 ```bash
@@ -3567,7 +3569,7 @@ export const readTools = [searchCustomers, getCustomer360, checkInventory, getPr
 cd apps/server && pnpm test
 ```
 
-Expected：rag 3 passed。若知识检索没命中 DOA 文档，调低 `hasSufficientEvidence` 阈值到 `0.01`，或检查 `knowledge` 路径。
+Expected：rag 4 passed（切块、DOA 检索、无证据拒答、docTypes 过滤）；total server tests 55。若知识检索没命中 DOA 文档，调低 `hasSufficientEvidence` 阈值到 `0.01`，或检查 `knowledge` 路径。
 
 - [ ] **Step 5: Commit**
 
