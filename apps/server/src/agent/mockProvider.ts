@@ -47,6 +47,14 @@ export class MockProvider implements ChatProvider {
     }
     if (/政策|账期|有效期|底线|保修|验收|违约金|月结|换机|DOA/.test(user)) {
       if (!hasTool(messages, "search_knowledge")) return toolResponse("search_knowledge", { query: user, topK: 5 });
+      const knowledge = [...messages].reverse().find((message) => message.role === "tool" && message.name === "search_knowledge");
+      let hasSufficientEvidence = false;
+      try {
+        hasSufficientEvidence = JSON.parse(knowledge?.content ?? "{}")?.data?.hasSufficientEvidence === true;
+      } catch {
+        hasSufficientEvidence = false;
+      }
+      if (!hasSufficientEvidence) return textResponse("资料中没有足够依据，建议转人工或创建工单。");
       return textResponse("根据知识库检索结果，以上是相关政策条款，请以引用原文为准。");
     }
     if (user.includes("报") || user.includes("报价")) {
