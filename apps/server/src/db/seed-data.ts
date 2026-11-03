@@ -1,5 +1,4 @@
 const yuan = (value: number) => value * 100;
-const now = Date.now();
 
 export const users = [
   { id: "u_sales_lin", name: "小林", role: "sales" as const, teamId: "team_east" },
@@ -71,17 +70,35 @@ export const inventoryRows = [
   { warehouseId: "w_sz", productId: "p_x1", onHand: 150, reserved: 20, safetyStock: 20, etaDays: 2, version: 0 },
   { warehouseId: "w_cd", productId: "p_x1", onHand: 50, reserved: 0, safetyStock: 10, etaDays: 3, version: 0 },
   { warehouseId: "w_sh", productId: "p_x2", onHand: 40, reserved: 5, safetyStock: 10, etaDays: 1, version: 0 },
-  { warehouseId: "w_sz", productId: "p_m27", onHand: 8, reserved: 2, safetyStock: 10, etaDays: 2, version: 0 },
+  { warehouseId: "w_sz", productId: "p_m27", onHand: 20, reserved: 12, safetyStock: 10, etaDays: 2, version: 0 },
   { warehouseId: "w_sh", productId: "p_d6", onHand: 300, reserved: 20, safetyStock: 50, etaDays: 1, version: 0 },
   { warehouseId: "w_sh", productId: "p_kb", onHand: 500, reserved: 30, safetyStock: 80, etaDays: 1, version: 0 },
 ];
 
-export const quoteSeeds = [
-  { id: "q_seed_1", quoteNo: "Q-2026-0001", customerId: "c_lingyun", contactId: "ct_zhao_1", ownerId: "u_sales_lin", status: "approved", subtotalCents: yuan(37_998), discountTotalCents: 0, taxTotalCents: yuan(4_939), totalCents: yuan(42_937), validUntil: now + 24 * 3600_000, riskFlags: "[]", notes: null, createdAt: now - 3 * 86400_000 },
-  { id: "q_seed_2", quoteNo: "Q-2026-0002", customerId: "c_boyuan", contactId: "ct_chen_1", ownerId: "u_sales_lin", status: "approved", subtotalCents: yuan(22_000), discountTotalCents: 0, taxTotalCents: yuan(2_860), totalCents: yuan(24_860), validUntil: now + 40 * 3600_000, riskFlags: "[]", notes: null, createdAt: now - 2 * 86400_000 },
-  { id: "q_seed_3", quoteNo: "Q-2026-0003", customerId: "c_xinghe", contactId: "ct_xing_1", ownerId: "u_sales_lin", status: "approved", subtotalCents: yuan(12_000), discountTotalCents: 0, taxTotalCents: yuan(1_560), totalCents: yuan(13_560), validUntil: now + 10 * 86400_000, riskFlags: "[]", notes: null, createdAt: now - 86400_000 },
+export function buildQuoteSeeds(now: number) {
+  return [
+    { id: "q_seed_1", quoteNo: "Q-2026-0001", customerId: "c_lingyun", contactId: "ct_zhao_1", ownerId: "u_sales_lin", status: "approved", subtotalCents: 3_749_500, discountTotalCents: 0, taxTotalCents: 487_435, totalCents: 4_236_935, validUntil: now + 24 * 3600_000, riskFlags: "[]", notes: null, createdAt: now - 3 * 86400_000 },
+    { id: "q_seed_2", quoteNo: "Q-2026-0002", customerId: "c_boyuan", contactId: "ct_chen_1", ownerId: "u_sales_lin", status: "approved", subtotalCents: 1_799_700, discountTotalCents: 0, taxTotalCents: 233_961, totalCents: 2_033_661, validUntil: now + 40 * 3600_000, riskFlags: "[]", notes: null, createdAt: now - 2 * 86400_000 },
+    { id: "q_seed_3", quoteNo: "Q-2026-0003", customerId: "c_xinghe", contactId: "ct_xing_1", ownerId: "u_sales_lin", status: "converted", subtotalCents: 949_500, discountTotalCents: 0, taxTotalCents: 123_435, totalCents: 1_072_935, validUntil: now + 10 * 86400_000, riskFlags: "[]", notes: null, createdAt: now - 86400_000 },
+  ];
+}
+
+export function buildOrderSeeds(now: number) {
+  return [
+    { id: "o_seed_1", orderNo: "SO-2026-0001", quoteId: "q_seed_3", customerId: "c_xinghe", ownerId: "u_sales_lin", status: "reserved", totalCents: 1_072_935, paymentTerms: "月结 30 天", createdAt: now - 86400_000 },
+  ];
+}
+
+export const quoteLineSeeds = [
+  { id: "ql_seed_1_1", quoteId: "q_seed_1", productId: "p_x1", quantity: 5, unitPriceCents: 749_900, discountRateBps: 0, lineTotalCents: 3_749_500, warehouseId: "w_sz" },
+  { id: "ql_seed_2_1", quoteId: "q_seed_2", productId: "p_x2", quantity: 3, unitPriceCents: 599_900, discountRateBps: 0, lineTotalCents: 1_799_700, warehouseId: "w_sh" },
+  { id: "ql_seed_3_1", quoteId: "q_seed_3", productId: "p_m27", quantity: 5, unitPriceCents: 189_900, discountRateBps: 0, lineTotalCents: 949_500, warehouseId: "w_sz" },
 ];
 
-export const orderSeeds = [
-  { id: "o_seed_1", orderNo: "SO-2026-0001", quoteId: "q_seed_1", customerId: "c_lingyun", ownerId: "u_sales_lin", status: "reserved", totalCents: yuan(42_937), paymentTerms: "月结 60 天", createdAt: now - 86400_000 },
+export const orderLineSeeds = [
+  { id: "ol_seed_1_1", orderId: "o_seed_1", productId: "p_m27", quantity: 5, unitPriceCents: 189_900, warehouseId: "w_sz" },
+];
+
+export const stockReservationSeeds = [
+  { id: "sr_seed_1_1", orderId: "o_seed_1", productId: "p_m27", warehouseId: "w_sz", quantity: 5, status: "active" },
 ];
