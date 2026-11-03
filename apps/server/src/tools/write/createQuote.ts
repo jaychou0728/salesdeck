@@ -31,10 +31,11 @@ export const createQuote: ToolDefinition<CreateQuoteInput, unknown> = {
     if (!contact || contact.customerId !== customer.id) return { model: fail("NOT_FOUND", "联系人不存在或不属于该客户") };
 
     const productRows = ctx.db.select().from(products).all();
+    const missing = input.lines.find((line) => !productRows.some((product) => product.sku === line.sku));
+    if (missing) return { model: fail("NOT_FOUND", `SKU 不存在: ${missing.sku}`) };
     const now = Date.now();
     const linePreviews = input.lines.map((line) => {
-      const product = productRows.find((row) => row.sku === line.sku);
-      if (!product) throw new Error(`SKU 不存在: ${line.sku}`);
+      const product = productRows.find((row) => row.sku === line.sku)!;
       const rules = ctx.db.select().from(priceRules).where(eq(priceRules.productId, product.id)).all();
       const price = computeUnitPrice({ customerLevel: customer.level, quantity: line.quantity, listPriceCents: product.listPriceCents, floorPriceCents: product.floorPriceCents, rules, now });
       return { productId: product.id, sku: product.sku, name: product.name, quantity: line.quantity, unitPriceCents: price.finalPriceCents, floorPriceCents: price.floorPriceCents, belowFloor: price.belowFloor, lineTotalCents: price.finalPriceCents * line.quantity, taxRateBps: product.taxRateBps, ruleRefs: price.ruleRefs };

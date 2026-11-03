@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { CreateAfterSalesTicketInput, fail, ok } from "@salespilot/shared";
-import { afterSalesTickets, customers, knowledgeChunks, products } from "../../db/schema.js";
+import { afterSalesTickets, customers, knowledgeChunks, orders, products } from "../../db/schema.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { withIdempotency } from "../../domain/idempotency.js";
 import { assertCustomerAccess } from "../../domain/permissions.js";
@@ -29,6 +29,12 @@ export const createAfterSalesTicket: ToolDefinition<CreateAfterSalesTicketInput,
     assertCustomerAccess(ctx.actor, customer);
     const product = ctx.db.select().from(products).where(eq(products.id, input.productId)).get();
     if (!product) return { model: fail("NOT_FOUND", "产品不存在") };
+    if (input.orderId) {
+      const order = ctx.db.select().from(orders).where(eq(orders.id, input.orderId)).get();
+      if (!order || order.customerId !== customer.id) {
+        return { model: fail("VALIDATION_ERROR", "订单不存在或不属于该客户") };
+      }
+    }
     const validRefs = input.policyRefs.filter((ref) => ctx.db.select().from(knowledgeChunks).where(eq(knowledgeChunks.id, ref)).get());
     if (validRefs.length !== input.policyRefs.length) return { model: fail("VALIDATION_ERROR", "政策引用必须来自知识库检索结果") };
     const preview = { customer: { id: customer.id, name: customer.name }, product: { id: product.id, sku: product.sku, name: product.name }, issueType: input.issueType, description: input.description, policyRefs: validRefs };

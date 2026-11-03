@@ -1,9 +1,10 @@
 import { eq } from "drizzle-orm";
 import { ConvertQuoteToOrderInput, fail, ok } from "@salespilot/shared";
-import { customers, quoteLines, quotes } from "../../db/schema.js";
+import { customers, inventory, quoteLines, quotes, warehouses } from "../../db/schema.js";
 import { createApproval } from "../../domain/approvals.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { checkCredit } from "../../domain/credit.js";
+import { planAllocation } from "../../domain/inventory.js";
 import { withIdempotency } from "../../domain/idempotency.js";
 import { createOrderFromQuote } from "../../domain/orders.js";
 import { assertCustomerAccess } from "../../domain/permissions.js";
@@ -27,6 +28,17 @@ export const convertQuoteToOrder: ToolDefinition<ConvertQuoteToOrderInput, unkno
     assertCustomerAccess(ctx.actor, customer);
     const credit = checkCredit(customer, quote.totalCents);
     const lines = ctx.db.select().from(quoteLines).where(eq(quoteLines.quoteId, quote.id)).all();
+    const stockChecks = lines.map((line) => {
+      const invRows = ctx.db
+        .select({ warehouseId: inventory.warehouseId, warehouseName: warehouses.name, region: warehouses.region, onHand: inventory.onHand, reserved: inventory.reserved, safetyStock: inventory.safetyStock, etaDays: inventory.etaDays, version: inventory.version })
+        .from(inventory)
+        .innerJoin(warehouses, eq(inventory.warehouseId, warehouses.id))
+        .where(eq(inventory.productId, line.productId))
+        .all();
+      const plan = planAllocation(invRows as any, line.quantity);
+      return { productId: line.productId, quantity: line.quantity, canFulfill: plan.canFulfill, missing: plan.missing, allocations: plan.allocations };
+    });
+    const canFulfill = stockChecks.every((check) => check.canFulfill);
     const preview = {
       quoteId: quote.id,
       quoteNo: quote.quoteNo,
@@ -35,8 +47,13 @@ export const convertQuoteToOrder: ToolDefinition<ConvertQuoteToOrderInput, unkno
       requiresApproval: credit.requiresApproval,
       reason: credit.reason,
       lines,
+      stockChecks,
+      canFulfill,
     };
     if (input.dryRun) {
+      if (!canFulfill) {
+        return { model: fail("OUT_OF_STOCK", "库存不足，无法转订单", { details: { stockChecks }, recoverable: true, suggestedAction: "考虑拆仓、替代 SKU 或补货" }) };
+      }
       const { token, expiresAt } = issueConfirmationToken(ctx.db, { actorId: ctx.actor.id, toolName: "convert_quote_to_order", payload: businessPayload(input) });
       return {
         model: ok({ status: "pending_confirmation", preview, expiresAt }),

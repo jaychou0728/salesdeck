@@ -1,6 +1,6 @@
-import { and, eq, gte, lte } from "drizzle-orm";
-import { GetSalesBriefingInput, ok } from "@salespilot/shared";
-import { customers, inventory, products, quotes } from "../../db/schema.js";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { GetSalesBriefingInput, fail, ok } from "@salespilot/shared";
+import { customers, inventory, products, quotes, users } from "../../db/schema.js";
 import type { ToolDefinition } from "../types.js";
 
 export const getSalesBriefing: ToolDefinition<GetSalesBriefingInput, unknown> = {
@@ -10,14 +10,25 @@ export const getSalesBriefing: ToolDefinition<GetSalesBriefingInput, unknown> = 
   kind: "read",
   allowedRoles: ["sales", "manager"],
   execute(ctx, input) {
+    if (input.scope === "team" && ctx.actor.role !== "manager") {
+      return { model: fail("FORBIDDEN", "销售只能查看自己的晨报") };
+    }
+    if (input.date && !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) {
+      return { model: fail("VALIDATION_ERROR", "date 格式应为 YYYY-MM-DD") };
+    }
     const now = input.date
       ? (() => {
           const [y, m, d] = input.date.split("-").map(Number);
           return y && m && d ? new Date(y, m - 1, d, 23, 59, 59).getTime() : Date.now();
         })()
       : Date.now();
-    const scope = input.scope === "team" && ctx.actor.role === "manager" ? undefined : eq(customers.ownerId, ctx.actor.id);
-    const customerRows = ctx.db.select().from(customers).where(scope).all();
+    const teamUserIds = ctx.actor.role === "manager" && input.scope === "team"
+      ? ctx.db.select({ id: users.id }).from(users).where(eq(users.teamId, ctx.actor.teamId)).all().map((user) => user.id)
+      : [ctx.actor.id];
+    const customerScope = ctx.actor.role === "manager" && input.scope === "team"
+      ? inArray(customers.ownerId, teamUserIds)
+      : eq(customers.ownerId, ctx.actor.id);
+    const customerRows = ctx.db.select().from(customers).where(customerScope).all();
     const creditAlerts = customerRows
       .filter((customer) => customer.creditLimitCents > 0 && customer.creditUsedCents / customer.creditLimitCents >= 0.8)
       .map((customer) => ({
@@ -45,7 +56,7 @@ export const getSalesBriefing: ToolDefinition<GetSalesBriefingInput, unknown> = 
       .from(quotes)
       .where(and(eq(quotes.status, "approved"), lte(quotes.validUntil, now + 48 * 3600_000), gte(quotes.validUntil, now)))
       .all()
-      .filter((quote) => (input.scope === "team" && ctx.actor.role === "manager" ? true : quote.ownerId === ctx.actor.id))
+      .filter((quote) => teamUserIds.includes(quote.ownerId))
       .map((quote) => ({
         type: "quote_expiring",
         severity: "info",
