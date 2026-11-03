@@ -6,10 +6,10 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "dev": "pnpm -r --parallel --if-present run dev",
-    "build": "pnpm -r --if-present run build",
-    "typecheck": "pnpm -r --if-present run typecheck",
-    "test": "pnpm -r --if-present run test",
+    "dev": "pnpm --filter @salespilot/shared build && pnpm -r --parallel --if-present run dev",
+    "build": "pnpm --filter @salespilot/shared build && pnpm --filter @salespilot/server build && pnpm --filter @salespilot/web build",
+    "typecheck": "pnpm --filter @salespilot/shared build && pnpm -r --if-present run typecheck",
+    "test": "pnpm --filter @salespilot/shared build && pnpm -r --if-present run test",
     "test:e2e": "pnpm --filter @salespilot/web test:e2e",
     "eval": "pnpm --filter @salespilot/server eval",
     "db:generate": "pnpm --filter @salespilot/server db:generate",
