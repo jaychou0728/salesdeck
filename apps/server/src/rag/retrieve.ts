@@ -43,20 +43,30 @@ function ranks(scores: number[]): number[] {
     .map((item) => item.index);
 }
 
-const CJK_CHAR = /^[一-龥]$/;
+const QUERY_ALIASES: Array<[RegExp, string]> = [
+  [/开不了机|开不机|无法启动|开不了/g, "无法开机"],
+  [/换新/g, "换机"],
+];
+
+export function normalizeQuery(query: string): string {
+  return QUERY_ALIASES.reduce((acc, [pattern, replacement]) => acc.replace(pattern, replacement), query);
+}
+
+const ASCII_WORD = /^[a-z0-9]+$/;
+const CJK_BIGRAM = /^[一-龥]{2}$/;
 
 // A chunk only counts as evidence when it shares a real term with the query:
-// an ASCII word / CJK bigram, or (for queries with no bigram hit) at least two
-// distinct CJK characters. A lone incidental character such as 计 in 设计 must
-// not be enough to answer an unrelated question.
-function hasLexicalSupport(query: string, text: string): boolean {
+// an ASCII word (length >= 2) or a CJK bigram. Single-character matches are
+// deliberately ignored so incidental characters such as 计 in 设计 cannot
+// answer an unrelated question.
+export function hasLexicalSupport(query: string, text: string): boolean {
   const docTokens = new Set(tokenize(text));
-  const meaningful = [...new Set(tokenize(query).filter((token) => token.length >= 2))];
-  if (meaningful.some((token) => docTokens.has(token))) return true;
-  const chars = [...new Set(tokenize(query).filter((token) => CJK_CHAR.test(token)))];
-  if (chars.length === 0) return false;
-  const matched = chars.filter((char) => docTokens.has(char)).length;
-  return matched >= Math.min(2, chars.length);
+  for (const token of new Set(tokenize(normalizeQuery(query)))) {
+    if ((ASCII_WORD.test(token) && token.length >= 2) || CJK_BIGRAM.test(token)) {
+      if (docTokens.has(token)) return true;
+    }
+  }
+  return false;
 }
 
 export function retrieve(
@@ -80,9 +90,10 @@ export function retrieve(
   const rows = base.where(filter).all();
   if (rows.length === 0) return { chunks: [], hasSufficientEvidence: false };
 
+  const normalized = normalizeQuery(query);
   const texts = rows.map((row) => `${row.title}\n${row.heading}\n${row.content}`);
-  const keyword = bm25Scores(query, texts);
-  const queryVector = hashEmbedding(query);
+  const keyword = bm25Scores(normalized, texts);
+  const queryVector = hashEmbedding(normalized);
   const vector = rows.map((row) => cosine(queryVector, JSON.parse(row.embeddingJson) as number[]));
   const keywordRank = ranks(keyword);
   const vectorRank = ranks(vector);
@@ -91,7 +102,13 @@ export function retrieve(
   );
   const ranked = ranks(fused).slice(0, topK);
 
-  const chunks = ranked.map((index) => ({
+  // Float chunks that share real terms with the query to the front so an
+  // exact-keyword section is cited even when a noisy vector chunk ranks first.
+  const supported = ranked.filter((index) => hasLexicalSupport(normalized, texts[index]));
+  const ordered = [...supported, ...ranked.filter((index) => !supported.includes(index))].slice(0, topK);
+  const hasSufficientEvidence = supported.length > 0;
+
+  const chunks = ordered.map((index) => ({
     docId: rows[index].docId,
     title: rows[index].title,
     section: rows[index].heading,
@@ -100,9 +117,5 @@ export function retrieve(
     score: fused[index],
   }));
 
-  const best = ranked[0];
-  return {
-    chunks,
-    hasSufficientEvidence: best !== undefined && keyword[best] > 0 && hasLexicalSupport(query, texts[best]),
-  };
+  return { chunks, hasSufficientEvidence };
 }

@@ -26,7 +26,7 @@ export function ingestKnowledge(db: Db, dir: string) {
     const raw = readFileSync(path.join(dir, file), "utf8");
     const { meta, body } = parseFrontmatter(raw);
     const id = meta.id ?? path.basename(file, ".md");
-    const contentHash = createHash("sha256").update(body).digest("hex");
+    const contentHash = createHash("sha256").update(JSON.stringify(meta) + "\n" + body).digest("hex");
     const existing = db.select().from(knowledgeDocs).where(eq(knowledgeDocs.id, id)).get();
     if (existing?.contentHash === contentHash) continue;
     db.insert(knowledgeDocs)
