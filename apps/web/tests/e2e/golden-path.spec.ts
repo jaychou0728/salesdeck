@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ request }) => {
+  const response = await request.post("/api/demo/reset");
+  expect(response.ok()).toBeTruthy();
+});
+
 test("quote to confirmation", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("SalesPilot")).toBeVisible();
