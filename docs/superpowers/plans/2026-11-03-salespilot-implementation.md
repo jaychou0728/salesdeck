@@ -4198,6 +4198,8 @@ cd apps/server && pnpm test
 
 Expected：graph 1 passed。
 
+> 实际实现补充：工具预算按调用次数计、单工具最多 2 次（初始 + 1 重试）；malformed args 返回结构化错误；会话/消息落库并支持多轮；未知 actor 返回 403；错误脱敏为 `PROVIDER_ERROR`；新增 intent/plan/retrieval 事件与 RAG 证据边界；新增 6 条 graph/chat 测试；总测试 70。
+
 - [ ] **Step 5: Commit**
 
 ```bash
