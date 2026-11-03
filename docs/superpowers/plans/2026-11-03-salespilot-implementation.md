@@ -3569,7 +3569,9 @@ export const readTools = [searchCustomers, getCustomer360, checkInventory, getPr
 cd apps/server && pnpm test
 ```
 
-Expected：rag 4 passed（切块、DOA 检索、无证据拒答、docTypes 过滤）；total server tests 55。若知识检索没命中 DOA 文档，调低 `hasSufficientEvidence` 阈值到 `0.01`，或检查 `knowledge` 路径。
+Expected：rag 10 passed（切块/重叠、DOA 检索、无证据拒答、docTypes、别名、单字拒答、未知类型、幂等入库、长段重叠）；total server tests 61。若知识检索没命中 DOA 文档，检查 `knowledge` 路径或别名表。
+
+> 实际实现补充：证据门槛改为 top-k 词法支持（ASCII 词 / CJK bigram，含「开不了机→无法开机」别名），避免 RRF 噪声误拒；切块增加 80 字重叠；ingest hash 覆盖 frontmatter。
 
 - [ ] **Step 5: Commit**
 

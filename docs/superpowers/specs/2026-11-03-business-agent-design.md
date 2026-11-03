@@ -354,9 +354,7 @@ type ToolResult<T> =
 
 ### 9.2 向量化
 
-可插拔 `EmbeddingProvider`：
-- `openai`：OpenAI 兼容 embedding 接口（如 bge-m3），需配置 Key。
-- `local`：字符 3-gram 哈希向量（1024 维），零外部依赖，作为默认兜底。
+本次交付使用 `local`：字符 n-gram 哈希向量（1024 维），零外部依赖，保证离线可跑。`EmbeddingProvider` 接口预留；OpenAI 兼容 embedding（如 bge-m3）作为后续增强，不列入 7 天交付范围。
 
 ### 9.3 检索
 
@@ -368,7 +366,7 @@ type ToolResult<T> =
 
 ### 9.4 回答边界与引用
 
-- 只依据检索内容回答；证据不足或最高分低于阈值时明确说「资料中没有」，并给人工 / 工单路径。
+- 只依据检索内容回答；证据门槛为 top-k 词法支持（ASCII 词或中文 bigram，含少量口语别名），不足时明确说「资料中没有」，并给人工 / 工单路径。
 - 每个结论附 `docTitle + section + snippet + chunkId`。
 - 文档冲突时并列展示，不擅自裁决。
 
