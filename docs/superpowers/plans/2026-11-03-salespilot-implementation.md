@@ -4539,6 +4539,8 @@ cd apps/server && pnpm test
 
 Expected：routes 3 passed。若 `/api/chat` 的 SSE 测试取不到 artifact，打印 `chat.body` 检查事件顺序。
 
+> 实际实现补充：确认/审批/晨报路由使用 `safeParse` 返回 400，未知 actor 403；demo reset 保留 knowledge 表；生产静态服务 `apps/web/dist`；路由测试 3 条；总测试 73。
+
 - [ ] **Step 5: Commit**
 
 ```bash
@@ -4917,14 +4919,15 @@ export function ChatStream() {
       await streamChat({
         message,
         actorId,
-        onEvent: (event) => {
-          if (event.type === "step.start" || event.type === "step.end") addTrace(event.payload);
-          if (event.type === "artifact") addArtifact(event.payload);
-          if (event.type === "token") {
-            assistantText += event.payload.delta ?? "";
+        onEvent: (sse) => {
+          const traceEvent = sse.payload;
+          if (sse.type === "step.start" || sse.type === "step.end") addTrace(traceEvent);
+          if (sse.type === "artifact") addArtifact(traceEvent.payload);
+          if (sse.type === "token") {
+            assistantText += traceEvent.payload?.delta ?? "";
             addMessage({ role: "assistant", content: assistantText });
           }
-          if (event.type === "error") setError(event.payload.message ?? "请求失败");
+          if (sse.type === "error") setError(traceEvent.payload?.message ?? "请求失败");
         },
       });
     } catch (caught) {
