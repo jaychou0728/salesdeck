@@ -1813,13 +1813,16 @@ export function assertManager(actor: Actor) {
 }
 ```
 
+> 测试断言注意：`AppError` 的 `code` 在属性里，中文业务文案在 `message` 里。不要用 `.toThrow(/INVALID_STATE/)`；应使用 `instanceof AppError` + `error.code` 断言。实际实现还补了「非 approved 报价不能转订单」和「销售可访问自己客户」两条测试。
+
 - [ ] **Step 4: 跑测试确认通过**
 
 ```bash
-cd apps/server && pnpm test
+pnpm --filter @salespilot/server test
+pnpm --filter @salespilot/server typecheck
 ```
 
-Expected：rules 5 passed。
+Expected：rules 7 passed（含非 approved 报价、销售可访问自己客户）；typecheck clean。
 
 - [ ] **Step 5: Commit**
 
