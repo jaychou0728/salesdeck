@@ -2,6 +2,9 @@
   "name": "sales-pilot",
   "private": true,
   "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "dev": "pnpm -r --parallel --if-present run dev",
     "build": "pnpm -r --if-present run build",

@@ -8,3 +8,6 @@ data/*.db-*
 coverage/
 playwright-report/
 test-results/
+*.tsbuildinfo
+.vite/
+_temp/
