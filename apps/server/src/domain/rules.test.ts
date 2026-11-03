@@ -33,6 +33,14 @@ describe("business rules", () => {
     expectAppError(() => assertQuoteConvertible({ status: "approved", validUntil: 100 }, 200), "INVALID_STATE", /过期/);
   });
 
+  it("rejects non-approved quotes", () => {
+    expectAppError(
+      () => assertQuoteConvertible({ status: "draft", validUntil: 999 }, 100),
+      "INVALID_STATE",
+      /只有已批准/,
+    );
+  });
+
   it("enforces order transitions", () => {
     expect(() => assertOrderTransition("reserved", "fulfilled")).not.toThrow();
     expectAppError(() => assertOrderTransition("fulfilled", "reserved"), "INVALID_STATE");
@@ -45,6 +53,15 @@ describe("business rules", () => {
     );
     expect(() =>
       assertCustomerAccess({ id: "u_manager_wang", role: "manager", teamId: "team_east", name: "老王" }, { ownerId: "u_sales_lin" }),
+    ).not.toThrow();
+  });
+
+  it("allows sales to access their own customer", () => {
+    expect(() =>
+      assertCustomerAccess(
+        { id: "u_sales_lin", role: "sales", teamId: "team_east", name: "小林" },
+        { ownerId: "u_sales_lin" },
+      ),
     ).not.toThrow();
   });
 });
