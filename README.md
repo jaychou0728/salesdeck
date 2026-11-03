@@ -35,6 +35,36 @@ pnpm dev             # 同时启动 server(3000) 与 web(5173)
 
 服务端启动时会自动执行迁移、在空库时自动 seed，并入库 `knowledge/*.md`。
 
+### 验证模型是否接入成功
+
+先看服务端实际使用的 Provider（不是前端顶部的静态文案）：
+
+```bash
+curl http://localhost:3000/health
+# {"ok":true,"provider":"deepseek"}   # 若为 mock，说明 Key 或 LLM_PROVIDER 没被加载
+```
+
+再发一次真实对话与工具调用：
+
+```bash
+# 1) 普通对话：HTTP 200 且 content 正常
+curl -s http://localhost:3000/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"deepseek-flash","messages":[{"role":"user","content":"Reply with exactly: OK"}]}'
+
+# 2) 工具调用：finish_reason 应为 tool_calls
+curl -s http://localhost:3000/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"deepseek-flash","messages":[{"role":"user","content":"Call get_customer_360 for customer c_huachen. Use the tool, do not answer in text."}],"tools":[{"type":"function","function":{"name":"get_customer_360","description":"Get customer 360","parameters":{"type":"object","properties":{"customerId":{"type":"string"}},"required":["customerId"]}}}]}'
+```
+
+说明：
+
+- 服务端显式加载仓库根目录 `.env`（`apps/server/.env` 可覆盖），所以 `pnpm dev` 也能读到根 `.env`。
+- 改 `.env` 后需要**重启** `pnpm dev`（tsx watch 不监听 `.env`）。
+- 本机已实测 `DEEPSEEK_MODEL=deepseek-flash` 可用；如果换 Key/账号后报 model 不存在，改成 `deepseek-chat` 或 `deepseek-reasoner`。
+- 401 / 402 / 404 分别检查 Key、余额、模型名；网关会返回 502 和错误信息。
+
 ### 环境变量
 
 见 `.env.example`：`PORT`、`DATABASE_URL`、`LLM_PROVIDER`、`DEEPSEEK_*`、`CONFIRMATION_SECRET`、`DEMO_MODE`、`EMBEDDING_PROVIDER`。`.env` 不入库，`.env.example` 只放占位符。

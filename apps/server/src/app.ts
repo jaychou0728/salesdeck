@@ -23,7 +23,7 @@ export function buildApp(deps: { db: Db; sqlite: Database.Database; provider: Ch
   app.register(cors, { origin: true });
   app.register(swagger, { openapi: { info: { title: "SalesPilot API", version: "0.1.0" } } });
   app.register(swaggerUi, { routePrefix: "/docs" });
-  registerHealth(app);
+  registerHealth(app, deps.provider.name);
   registerOpenAiGateway(app, deps.provider);
   registerChat(app, deps);
   registerConfirmations(app, deps);
