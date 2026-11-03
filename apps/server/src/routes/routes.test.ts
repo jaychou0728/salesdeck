@@ -47,4 +47,15 @@ describe("routes", () => {
     expect(confirm.statusCode).toBe(200);
     expect(confirm.json().ok).toBe(true);
   });
+
+  it("exposes openapi paths", async () => {
+    const { app } = setup();
+    await app.ready();
+    const response = await app.inject({ method: "GET", url: "/docs/json" });
+    expect(response.statusCode).toBe(200);
+    const spec = response.json();
+    expect(Object.keys(spec.paths).length).toBeGreaterThan(5);
+    expect(spec.paths["/api/chat"]).toBeTruthy();
+    expect(spec.paths["/health"]).toBeTruthy();
+  });
 });

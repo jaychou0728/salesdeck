@@ -1,5 +1,17 @@
 import type { FastifyInstance } from "fastify";
 
 export function registerHealth(app: FastifyInstance) {
-  app.get("/health", async () => ({ ok: true }));
+  app.after(() => {
+    app.get(
+      "/health",
+      {
+        schema: {
+          tags: ["system"],
+          summary: "Health check",
+          response: { 200: { type: "object", properties: { ok: { type: "boolean" } } } },
+        },
+      },
+      async () => ({ ok: true }),
+    );
+  });
 }
