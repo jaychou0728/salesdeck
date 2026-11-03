@@ -59,7 +59,14 @@ export function reserveWithVersion(
 }
 
 export function releaseReservation(sqlite: Database.Database, warehouseId: string, productId: string, quantity: number) {
-  sqlite
-    .prepare(`update inventory set reserved = reserved - ?, version = version + 1 where warehouse_id = ? and product_id = ?`)
-    .run(quantity, warehouseId, productId);
+  const result = sqlite
+    .prepare(
+      `update inventory
+         set reserved = reserved - ?, version = version + 1
+       where warehouse_id = ? and product_id = ? and reserved >= ?`,
+    )
+    .run(quantity, warehouseId, productId, quantity);
+  if (result.changes !== 1) {
+    throw new AppError("CONFLICT", "释放预留失败：预留不足或记录不存在", { warehouseId, productId }, false);
+  }
 }

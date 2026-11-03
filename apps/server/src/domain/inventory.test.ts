@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { available, planAllocation, reserveWithVersion } from "./inventory.js";
+import { available, planAllocation, releaseReservation, reserveWithVersion } from "./inventory.js";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { inventory } from "../db/schema.js";
@@ -27,5 +27,19 @@ describe("inventory", () => {
     const row = db.select().from(inventory).where(eq(inventory.productId, "p_x1")).all().find((r) => r.warehouseId === "w_sz")!;
     reserveWithVersion(sqlite, "w_sz", "p_x1", 1, row.version);
     expect(() => reserveWithVersion(sqlite, "w_sz", "p_x1", 1, row.version)).toThrow(/库存已被其他操作占用/);
+  });
+
+  it("rejects reserving more than available stock", () => {
+    const { db, sqlite } = makeTestDb();
+    seedDatabase(db);
+    const row = db.select().from(inventory).where(eq(inventory.productId, "p_x1")).all().find((r) => r.warehouseId === "w_sh")!;
+    expect(row.onHand).toBe(0);
+    expect(() => reserveWithVersion(sqlite, "w_sh", "p_x1", 1, row.version)).toThrow(/库存已被其他操作占用/);
+  });
+
+  it("rejects releasing more than reserved", () => {
+    const { db, sqlite } = makeTestDb();
+    seedDatabase(db);
+    expect(() => releaseReservation(sqlite, "w_sz", "p_x1", 9999)).toThrow(/预留不足/);
   });
 });

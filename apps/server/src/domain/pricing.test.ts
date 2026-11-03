@@ -15,9 +15,9 @@ describe("pricing", () => {
   });
 
   it("flags below-floor pricing", () => {
-    const result = computeUnitPrice({ customerLevel: "A", quantity: 1, listPriceCents: 700_000, floorPriceCents: 699_900, rules: [], now: 1000 });
-    expect(result.finalPriceCents).toBe(700_000);
-    expect(result.belowFloor).toBe(false);
+    const result = computeUnitPrice({ customerLevel: "A", quantity: 1, listPriceCents: 690_000, floorPriceCents: 699_900, rules: [], now: 1000 });
+    expect(result.finalPriceCents).toBe(690_000);
+    expect(result.belowFloor).toBe(true);
   });
 
   it("computes totals with tax", () => {

@@ -41,6 +41,7 @@ export function computeUnitPrice(input: UnitPriceInput): UnitPriceResult {
 
   const tier = active[0];
   const tierPriceCents = tier?.unitPriceCents ?? input.listPriceCents;
+  // 业务约定：最高优先级的促销折扣覆盖阶梯价折扣，不做叠加计算。
   const bestDiscount = active
     .filter((rule) => rule.discountBps > 0)
     .sort((a, b) => b.priority - a.priority || b.discountBps - a.discountBps)[0];
