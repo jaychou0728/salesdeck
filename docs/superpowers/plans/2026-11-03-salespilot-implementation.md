@@ -313,6 +313,8 @@ git commit -m "chore: bootstrap pnpm monorepo"
 
 ---
 
+> Scaffold hardening already applied in Task 0: server tsconfig uses NodeNext/NodeNext; root and shared declare `engines >=22.18`; `pnpm-workspace.yaml` allows better-sqlite3/esbuild builds; `@types/node` added to shared/web; `pnpm-lock.yaml` committed; server test uses `--passWithNoTests`.
+
 ## Task 1: Shared 契约（错误、类型、Zod Schema）
 
 **Files:**
@@ -320,7 +322,12 @@ git commit -m "chore: bootstrap pnpm monorepo"
 - Create: `packages/shared/src/types.ts`
 - Create: `packages/shared/src/schemas.ts`
 - Modify: `packages/shared/src/index.ts`
+- Modify: `packages/shared/package.json`
+- Modify: `packages/shared/tsconfig.json`
+- Modify: `package.json`
 - Test: `packages/shared/src/schemas.test.ts`
+
+> 运行时契约修正：shared 必须是「构建到 dist」的包，不能让 Node 直接执行 TS 源码。server 的 NodeNext 从 `dist/index.d.ts` 读取类型，web 从 `dist/index.js` 读取运行时代码；根脚本先构建 shared。
 
 - [ ] **Step 1: 写失败测试**
 
@@ -376,6 +383,61 @@ pnpm --filter @salespilot/shared test
 Expected：FAIL，`Cannot find module './schemas.js'`。
 
 - [ ] **Step 3: 写实现**
+
+先把 shared 改成真实构建包。
+
+`packages/shared/package.json`：
+
+```json
+{
+  "name": "@salespilot/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -w -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": { "zod": "^3.23.8" },
+  "devDependencies": { "@types/node": "^22.7.5", "typescript": "^5.6.3", "vitest": "^2.1.4" }
+}
+```
+
+`packages/shared/tsconfig.json`：
+
+```json
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true
+  },
+  "include": ["src"]
+}
+```
+
+根 `package.json` 的 scripts 改为先构建 shared：
+
+```json
+"scripts": {
+  "dev": "pnpm --filter @salespilot/shared build && pnpm -r --parallel --if-present run dev",
+  "build": "pnpm --filter @salespilot/shared build && pnpm --filter @salespilot/server build && pnpm --filter @salespilot/web build",
+  "typecheck": "pnpm --filter @salespilot/shared build && pnpm -r --if-present run typecheck",
+  "test": "pnpm --filter @salespilot/shared build && pnpm -r --if-present run test",
+  "test:e2e": "pnpm --filter @salespilot/web test:e2e",
+  "eval": "pnpm --filter @salespilot/server eval",
+  "db:generate": "pnpm --filter @salespilot/server db:generate",
+  "db:migrate": "pnpm --filter @salespilot/server db:migrate",
+  "db:seed": "pnpm --filter @salespilot/server db:seed"
+}
+```
 
 `packages/shared/src/errors.ts`：
 
@@ -680,23 +742,27 @@ export type ApprovalDecision = z.infer<typeof ApprovalDecision>;
 `packages/shared/src/index.ts`：
 
 ```ts
+export const WORKSPACE_NAME = "salespilot";
+
 export * from "./errors.js";
 export * from "./types.js";
 export * from "./schemas.js";
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [ ] **Step 4: 构建并跑测试确认通过**
 
 ```bash
+pnpm --filter @salespilot/shared build
 pnpm --filter @salespilot/shared test
+pnpm -r --if-present run typecheck
 ```
 
-Expected：4 passed。
+Expected：shared test 5 passed（1 个 workspace smoke + 4 个 schema 测试）；`packages/shared/dist/index.js` 与 `index.d.ts` 存在；所有包 typecheck 通过。
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/shared
+git add packages/shared package.json
 git commit -m "feat: add shared contracts and schemas"
 ```
 
