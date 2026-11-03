@@ -2497,6 +2497,8 @@ cd apps/server && pnpm test
 
 Expected：read tools 6 passed（搜索、拆仓、越权、定价、联系人歧义、region/needByDate 过滤）。
 
+> 实际实现补充：registry 对 validation/权限/异常都写 audit，并在 `step.start` 中 redact `confirmationToken` / `idempotencyKey`；`search_customers` 合并联系人结果并应用 `level`；`check_inventory` 精确 SKU 优先、不返回 `costCents`、`needByDate` 按本地日解析；新增 registry 测试 3 条；总测试 38。
+
 - [ ] **Step 5: Commit**
 
 ```bash
@@ -2639,6 +2641,14 @@ describe("write tools", () => {
     expect(order?.status).toBe("reserved");
     const customer = db.select().from(customers).where(eq(customers.id, "c_huachen")).get();
     expect(customer!.creditUsedCents).toBeGreaterThan(4_600_000);
+  });
+
+  it("generates briefing alerts for manager", async () => {
+    const { ctx } = setup();
+    const managerCtx = { ...ctx, actor: manager };
+    const result = await executeTool(tool("get_sales_briefing"), managerCtx, { scope: "team" });
+    expect(result.model.ok).toBe(true);
+    if (result.model.ok) expect((result.model.data as any).alerts.length).toBeGreaterThan(0);
   });
 });
 ```
@@ -3127,7 +3137,7 @@ export { executeTool, toolSpecs } from "./registry.js";
 cd apps/server && pnpm test
 ```
 
-Expected：write tools 4 passed。若 `createOrderFromQuote` 的库存版本查询报错，按上方注释改为 `and(eq(warehouseId), eq(productId))` 精确读取。
+Expected：write tools 5 passed（报价预览不泄露令牌、低于底线审批、信用不足审批、审批后建单、晨报）。若 `createOrderFromQuote` 的库存版本查询报错，按上方注释改为 `and(eq(warehouseId), eq(productId))` 精确读取。
 
 - [ ] **Step 5: Commit**
 
