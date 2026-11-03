@@ -29,7 +29,7 @@
     "openai": "^4.68.0",
     "pino": "^9.5.0",
     "zod": "^3.23.8",
-    "zod-to-json-schema": "^3.23.5"
+    "zod-to-json-schema": "3.23.5"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
