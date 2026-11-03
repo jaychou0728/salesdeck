@@ -3,42 +3,75 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { auditLogs } from "../db/schema.js";
 import type { ToolContext, ToolDefinition, ToolOutcome } from "./types.js";
 
+const REDACTED_KEYS = new Set(["confirmationToken", "idempotencyKey", "token"]);
+
+export function redact(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map((item) => redact(item));
+  if (value !== null && typeof value === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+      result[key] = REDACTED_KEYS.has(key) ? "[REDACTED]" : redact(nested);
+    }
+    return result;
+  }
+  return value;
+}
+
+function writeAudit(
+  ctx: ToolContext,
+  definition: ToolDefinition<any, any>,
+  input: unknown,
+  result: unknown,
+  status: "ok" | "error",
+  latencyMs: number,
+) {
+  ctx.db
+    .insert(auditLogs)
+    .values({
+      id: crypto.randomUUID(),
+      traceId: ctx.traceId,
+      actorId: ctx.actor.id,
+      toolName: definition.name,
+      argsJson: JSON.stringify(redact(input) ?? null),
+      resultJson: JSON.stringify(result),
+      status,
+      latencyMs,
+      createdAt: Date.now(),
+    })
+    .run();
+}
+
 export async function executeTool<I, O>(
   definition: ToolDefinition<I, O>,
   ctx: ToolContext,
   rawInput: unknown,
 ): Promise<ToolOutcome<O>> {
   const started = Date.now();
+  ctx.emit({ type: "step.start", name: definition.name, payload: { input: redact(rawInput) } });
+
   const parsed = definition.inputSchema.safeParse(rawInput);
   if (!parsed.success) {
-    return {
-      model: fail("VALIDATION_ERROR", parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; "), {
-        details: parsed.error.issues,
-      }),
-    };
+    const latencyMs = Date.now() - started;
+    const model = fail("VALIDATION_ERROR", parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; "), {
+      details: parsed.error.issues,
+    });
+    writeAudit(ctx, definition, rawInput, model, "error", latencyMs);
+    ctx.emit({ type: "step.end", name: definition.name, status: "error", payload: model, latencyMs });
+    return { model };
   }
   if (!definition.allowedRoles.includes(ctx.actor.role)) {
-    return { model: fail("FORBIDDEN", "当前角色不能执行该工具") };
+    const latencyMs = Date.now() - started;
+    const model = fail("FORBIDDEN", "当前角色不能执行该工具");
+    writeAudit(ctx, definition, parsed.data, model, "error", latencyMs);
+    ctx.emit({ type: "step.end", name: definition.name, status: "error", payload: model, latencyMs });
+    return { model };
   }
 
-  ctx.emit({ type: "step.start", name: definition.name, payload: { input: parsed.data } });
   try {
     const outcome = await definition.execute(ctx, parsed.data);
     const latencyMs = Date.now() - started;
     if (outcome.model.ok) outcome.model.meta.latencyMs = latencyMs;
-    ctx.db.insert(auditLogs)
-      .values({
-        id: crypto.randomUUID(),
-        traceId: ctx.traceId,
-        actorId: ctx.actor.id,
-        toolName: definition.name,
-        argsJson: JSON.stringify(parsed.data),
-        resultJson: JSON.stringify(outcome.model),
-        status: outcome.model.ok ? "ok" : "error",
-        latencyMs,
-        createdAt: Date.now(),
-      })
-      .run();
+    writeAudit(ctx, definition, parsed.data, outcome.model, outcome.model.ok ? "ok" : "error", latencyMs);
     ctx.emit({
       type: "step.end",
       name: definition.name,
@@ -51,13 +84,17 @@ export async function executeTool<I, O>(
     }
     return outcome;
   } catch (error) {
-    const appError = error instanceof AppError ? error : new AppError("PROVIDER_ERROR", "工具执行失败", String(error));
     const latencyMs = Date.now() - started;
+    const appError =
+      error instanceof AppError
+        ? error
+        : new AppError("PROVIDER_ERROR", "工具执行失败");
     const model = fail(appError.code, appError.message, {
       details: appError.details,
       recoverable: appError.recoverable,
       suggestedAction: appError.suggestedAction,
     });
+    writeAudit(ctx, definition, parsed.data, model, "error", latencyMs);
     ctx.emit({ type: "step.end", name: definition.name, status: "error", payload: model, latencyMs });
     return { model };
   }

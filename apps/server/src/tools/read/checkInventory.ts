@@ -17,10 +17,35 @@ export const checkInventory: ToolDefinition<CheckInventoryInput, unknown> = {
       .where(or(eq(products.sku, input.skuQuery), like(products.name, `%${input.skuQuery}%`)))
       .all();
     if (productRows.length === 0) {
-      return { model: ok({ product: null, candidates: [], warehouses: [], canFulfill: false, allocations: [], missing: 0 }) };
+      return {
+        model: ok({
+          product: null,
+          candidates: [],
+          warehouses: [],
+          ambiguousProduct: false,
+          requestedQty: input.quantity ?? null,
+          canFulfill: false,
+          allocations: [],
+          missing: 0,
+          appliedFilters: { region: input.region ?? null, needByDate: input.needByDate ?? null, daysUntil: null },
+          alternatives: [],
+        }),
+      };
     }
 
-    const product = productRows[0];
+    const product = productRows.find((row) => row.sku === input.skuQuery) ?? productRows[0];
+    const productView = {
+      id: product.id,
+      sku: product.sku,
+      name: product.name,
+      category: product.category,
+      unit: product.unit,
+      listPriceCents: product.listPriceCents,
+      floorPriceCents: product.floorPriceCents,
+      taxRateBps: product.taxRateBps,
+      status: product.status,
+    };
+
     const allRows = ctx.db
       .select({
         warehouseId: inventory.warehouseId,
@@ -40,9 +65,15 @@ export const checkInventory: ToolDefinition<CheckInventoryInput, unknown> = {
 
     let daysUntil: number | null = null;
     if (input.needByDate) {
-      const parsed = Date.parse(input.needByDate);
-      if (Number.isNaN(parsed)) return { model: fail("VALIDATION_ERROR", "needByDate 格式无效") };
-      daysUntil = Math.ceil((parsed - Date.now()) / 86400000);
+      const [y, m, d] = input.needByDate.split("-").map(Number);
+      if (!y || !m || !d) return { model: fail("VALIDATION_ERROR", "needByDate 格式无效") };
+      const target = new Date(y, m - 1, d).getTime();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      daysUntil = Math.round((target - today.getTime()) / 86400000);
+      if (!Number.isFinite(target) || !Number.isFinite(daysUntil)) {
+        return { model: fail("VALIDATION_ERROR", "needByDate 格式无效") };
+      }
     }
 
     const regionRows = input.region ? allRows.filter((row) => row.region === input.region) : allRows;
@@ -51,17 +82,19 @@ export const checkInventory: ToolDefinition<CheckInventoryInput, unknown> = {
       ? planAllocation(filteredRows, input.quantity)
       : { canFulfill: true, allocations: [], missing: 0 };
 
+    const filteredWarehouseIds = new Set(filteredRows.map((row) => row.warehouseId));
     return {
       model: ok({
-        product,
+        product: productView,
         candidates: productRows.map((row) => ({ id: row.id, sku: row.sku, name: row.name })),
         warehouses: allRows,
+        ambiguousProduct: productRows.length > 1,
         requestedQty: input.quantity ?? null,
         canFulfill: plan.canFulfill,
         allocations: plan.allocations,
         missing: plan.missing,
         appliedFilters: { region: input.region ?? null, needByDate: input.needByDate ?? null, daysUntil },
-        alternatives: allRows.filter((row) => !filteredRows.includes(row)),
+        alternatives: allRows.filter((row) => !filteredWarehouseIds.has(row.warehouseId)),
       }),
     };
   },

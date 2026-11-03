@@ -1,5 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { GetPricingInput, ok } from "@salespilot/shared";
+import { GetPricingInput, fail, ok } from "@salespilot/shared";
 import { customers, priceRules, products } from "../../db/schema.js";
 import { assertCustomerAccess } from "../../domain/permissions.js";
 import { computeQuoteTotals, computeUnitPrice } from "../../domain/pricing.js";
@@ -13,10 +13,15 @@ export const getPricing: ToolDefinition<GetPricingInput, unknown> = {
   allowedRoles: ["sales", "manager"],
   execute(ctx, input) {
     const customer = ctx.db.select().from(customers).where(eq(customers.id, input.customerId)).get();
-    if (!customer) return { model: ok({ lines: [], totals: null }) };
+    if (!customer) return { model: fail("NOT_FOUND", "客户不存在") };
     assertCustomerAccess(ctx.actor, customer);
     const skus = input.items.map((item) => item.sku);
     const productRows = ctx.db.select().from(products).where(inArray(products.sku, skus)).all();
+    const knownSkus = new Set(productRows.map((row) => row.sku));
+    const unknownSkus = [...new Set(skus.filter((sku) => !knownSkus.has(sku)))];
+    if (unknownSkus.length > 0) {
+      return { model: fail("NOT_FOUND", `SKU 不存在: ${unknownSkus.join(", ")}`) };
+    }
     const now = Date.now();
     const lines = input.items.map((item) => {
       const product = productRows.find((row) => row.sku === item.sku);

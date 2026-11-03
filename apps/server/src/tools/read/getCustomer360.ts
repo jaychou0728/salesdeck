@@ -1,5 +1,5 @@
 import { desc, eq } from "drizzle-orm";
-import { GetCustomer360Input, ok } from "@salespilot/shared";
+import { GetCustomer360Input, fail, ok } from "@salespilot/shared";
 import { contacts, customers, orders, quotes } from "../../db/schema.js";
 import { assertCustomerAccess } from "../../domain/permissions.js";
 import type { ToolDefinition } from "../types.js";
@@ -12,7 +12,7 @@ export const getCustomer360: ToolDefinition<GetCustomer360Input, unknown> = {
   allowedRoles: ["sales", "manager"],
   execute(ctx, input) {
     const customer = ctx.db.select().from(customers).where(eq(customers.id, input.customerId)).get();
-    if (!customer) return { model: ok({ customer: null, contacts: [], credit: null, recentOrders: [], openQuotes: [] }) };
+    if (!customer) return { model: fail("NOT_FOUND", "客户不存在") };
     assertCustomerAccess(ctx.actor, customer);
     const customerContacts = ctx.db.select().from(contacts).where(eq(contacts.customerId, customer.id)).all();
     const recentOrders = ctx.db
@@ -23,6 +23,7 @@ export const getCustomer360: ToolDefinition<GetCustomer360Input, unknown> = {
       .limit(5)
       .all();
     const openQuotes = ctx.db.select().from(quotes).where(eq(quotes.customerId, customer.id)).all();
+    const now = Date.now();
     return {
       model: ok({
         customer,
@@ -34,7 +35,10 @@ export const getCustomer360: ToolDefinition<GetCustomer360Input, unknown> = {
           utilization: customer.creditLimitCents === 0 ? 0 : customer.creditUsedCents / customer.creditLimitCents,
         },
         recentOrders,
-        openQuotes: openQuotes.filter((quote) => ["draft", "pending_approval", "approved"].includes(quote.status)),
+        openQuotes: openQuotes.filter(
+          (quote) =>
+            ["draft", "pending_approval", "approved"].includes(quote.status) && quote.validUntil >= now,
+        ),
       }),
     };
   },
