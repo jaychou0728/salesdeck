@@ -1,0 +1,14 @@
+{
+  "model": "mock",
+  "messages": [{ "role": "user", "content": "晨报" }],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_sales_briefing",
+        "description": "briefing",
+        "parameters": { "type": "object" }
+      }
+    }
+  ]
+}
