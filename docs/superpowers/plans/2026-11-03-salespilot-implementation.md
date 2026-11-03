@@ -1390,6 +1390,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 ```
 
+> 实际实现补充：`quote_lines` 3 条、`order_lines` / `stock_reservations` 各 1 条；`q_seed_3` 为 `converted`，`o_seed_1` 指向 `q_seed_3`；quote/order 日期由 `seedDatabase(db, now = Date.now())` 动态生成；M27 苏州仓为 `onHand 20 / reserved 12`。
+
 - [ ] **Step 4: 跑测试确认通过**
 
 ```bash
@@ -1460,6 +1462,7 @@ describe("pricing", () => {
 import { describe, expect, it } from "vitest";
 import { available, planAllocation, reserveWithVersion } from "./inventory.js";
 import { makeTestDb } from "../test/helpers.js";
+import { seedDatabase } from "../db/seed.js";
 import { inventory } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 
@@ -1481,9 +1484,10 @@ describe("inventory", () => {
 
   it("rejects the second writer with a stale version", () => {
     const { db, sqlite } = makeTestDb();
+    seedDatabase(db);
     const row = db.select().from(inventory).where(eq(inventory.productId, "p_x1")).all().find((r) => r.warehouseId === "w_sz")!;
     reserveWithVersion(sqlite, "w_sz", "p_x1", 1, row.version);
-    expect(() => reserveWithVersion(sqlite, "w_sz", "p_x1", 1, row.version)).toThrow(/CONFLICT/);
+    expect(() => reserveWithVersion(sqlite, "w_sz", "p_x1", 1, row.version)).toThrow(/库存已被其他操作占用/);
   });
 });
 ```
