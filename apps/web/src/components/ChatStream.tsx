@@ -4,9 +4,10 @@ import { streamChat } from "../api/sse";
 import { MessageBubble } from "./MessageBubble";
 import { Composer } from "./Composer";
 import { ArtifactCard } from "./ArtifactCard";
+import { ApprovalCard } from "./ApprovalCard";
 
 export function ChatStream() {
-  const { actorId, messages, artifacts, streaming, addMessage, addTrace, addArtifact, setStreaming, setPendingApproval } = useAppStore();
+  const { actorId, messages, artifacts, streaming, pendingApprovalId, addMessage, addTrace, addArtifact, setStreaming, setPendingApproval } = useAppStore();
   const [error, setError] = useState<string | null>(null);
   const [lastQuoteId, setLastQuoteId] = useState<string>();
 
@@ -55,6 +56,7 @@ export function ChatStream() {
       <div className="flex-1 space-y-4 overflow-y-auto p-6">
         {messages.map((message, index) => <MessageBubble key={index} {...message} />)}
         {artifacts.map((artifact, index) => <ArtifactCard key={index} artifact={artifact} onCommitted={onCommitted} />)}
+        {pendingApprovalId && <ApprovalCard approvalId={pendingApprovalId} />}
         {lastQuoteId && (
           <div className="flex justify-start">
             <button className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white" onClick={() => send(`把报价 ${lastQuoteId} 转成订单`)}>

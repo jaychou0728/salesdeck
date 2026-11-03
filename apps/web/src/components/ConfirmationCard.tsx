@@ -1,10 +1,12 @@
 import { useState } from "react";
 import type { Artifact } from "@salespilot/shared";
 import { formatMoney } from "../lib/utils";
+import { useAppStore } from "../state/store";
 
 export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact; onCommitted: (result: any) => void }) {
   const [loading, setLoading] = useState(false);
   const [committed, setCommitted] = useState(false);
+  const actorId = useAppStore((state) => state.actorId);
   const payload = artifact.payload as any;
   const input = payload?.input;
   const preview = payload?.preview;
@@ -15,12 +17,12 @@ export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact
     setLoading(true);
     const response = await fetch("/api/confirmations/confirm", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-actor-id": "u_sales_lin" },
+      headers: { "Content-Type": "application/json", "x-actor-id": actorId },
       body: JSON.stringify({ token: artifact.confirmationToken, toolName: artifact.toolName ?? "create_quote", payload: input, idempotencyKey: crypto.randomUUID() }),
     });
     const result = await response.json();
     setLoading(false);
-    setCommitted(true);
+    if (result?.ok) setCommitted(true);
     onCommitted(result);
   }
 

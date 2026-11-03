@@ -5,6 +5,8 @@ dist/
 !.env.example
 data/*.db
 data/*.db-*
+**/data/*.db
+**/data/*.db-*
 coverage/
 playwright-report/
 test-results/
