@@ -1393,10 +1393,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 - [ ] **Step 4: 跑测试确认通过**
 
 ```bash
-cd apps/server && pnpm test
+pnpm --filter @salespilot/server test
+DATABASE_URL=./data/seed-check.db pnpm --filter @salespilot/server db:migrate
+DATABASE_URL=./data/seed-check.db pnpm --filter @salespilot/server db:seed
+rm -f apps/server/data/seed-check.db apps/server/data/seed-check.db-*
 ```
 
-Expected：seed 测试 2 passed。
+Expected：server tests 5 passed（3 schema + 2 seed）；CLI 打印 `seed done`。`db:seed` 假定迁移已执行；先跑 `db:migrate`，不要用 `:memory:`（迁移和 seed 是两个进程，不共享内存库）。
 
 - [ ] **Step 5: Commit**
 
