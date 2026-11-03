@@ -1655,7 +1655,9 @@ export function releaseReservation(sqlite: Database.Database, warehouseId: strin
 cd apps/server && pnpm test
 ```
 
-Expected：pricing 3 passed，inventory 2 passed。
+Expected：pricing 3 passed，inventory 4 passed（拆仓、版本冲突、可用量不足、释放下限）；typecheck clean。
+
+> 实际实现补充：`releaseReservation` 增加 `reserved >= quantity` 与 `changes` 检查；促销语义为「最高优先级折扣覆盖阶梯价折扣」，已在 `pricing.ts` 注释。
 
 - [ ] **Step 5: Commit**
 
