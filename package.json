@@ -1,0 +1,16 @@
+{
+  "name": "sales-pilot",
+  "private": true,
+  "packageManager": "pnpm@11.17.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel --if-present run dev",
+    "build": "pnpm -r --if-present run build",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test",
+    "test:e2e": "pnpm --filter @salespilot/web test:e2e",
+    "eval": "pnpm --filter @salespilot/server eval",
+    "db:generate": "pnpm --filter @salespilot/server db:generate",
+    "db:migrate": "pnpm --filter @salespilot/server db:migrate",
+    "db:seed": "pnpm --filter @salespilot/server db:seed"
+  }
+}
