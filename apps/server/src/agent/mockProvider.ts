@@ -19,7 +19,10 @@ export class MockProvider implements ChatProvider {
 
   private route(messages: ChatMessage[]): ChatResponse {
     const user = lastUser(messages);
-    if (user.includes("晨报")) return toolResponse("get_sales_briefing", { scope: "self" });
+    if (user.includes("晨报")) {
+      if (!hasTool(messages, "get_sales_briefing")) return toolResponse("get_sales_briefing", { scope: "self" });
+      return textResponse("晨报已生成，请查看右侧风险提醒。");
+    }
     if (user.includes("开不了机") || user.includes("售后")) {
       if (!hasTool(messages, "search_knowledge")) return toolResponse("search_knowledge", { query: "开不了机 DOA 换机", topK: 5 });
       const knowledge = [...messages].reverse().find((message) => message.role === "tool" && message.name === "search_knowledge");
@@ -30,20 +33,27 @@ export class MockProvider implements ChatProvider {
       return textResponse("根据售后与 DOA 政策，签收 7 日内非人为损坏可换新；请提供序列号，我已为你准备工单预览。");
     }
     if (user.includes("转成订单") || user.includes("转订单")) {
-      const quoteId = user.match(/q_[a-zA-Z0-9-]+/)?.[0] ?? "q_unknown";
-      return toolResponse("convert_quote_to_order", { quoteId, dryRun: true });
+      if (!hasTool(messages, "convert_quote_to_order")) {
+        const quoteId = user.match(/q_[a-zA-Z0-9-]+/)?.[0] ?? "q_unknown";
+        return toolResponse("convert_quote_to_order", { quoteId, dryRun: true });
+      }
+      return textResponse("已生成转订单预览，请在下方确认。");
     }
     if (user.includes("快到期") || user.includes("团队") || user.includes("信用风险")) {
-      return toolResponse("get_sales_briefing", { scope: user.includes("团队") || user.includes("信用风险") ? "team" : "self" });
+      if (!hasTool(messages, "get_sales_briefing")) return toolResponse("get_sales_briefing", { scope: user.includes("团队") || user.includes("信用风险") ? "team" : "self" });
+      return textResponse("晨报已生成，请查看右侧风险提醒。");
     }
     if (/信用|联系人|最近订单|c_none/.test(user)) {
-      return toolResponse("get_customer_360", { customerId: "c_huachen" });
+      if (!hasTool(messages, "get_customer_360")) return toolResponse("get_customer_360", { customerId: "c_huachen" });
+      return textResponse("客户 360 已获取，请查看右侧业务面板。");
     }
     if (user.includes("库存") || user.includes("苏州仓")) {
-      return toolResponse("check_inventory", { skuQuery: "X1", quantity: 120 });
+      if (!hasTool(messages, "check_inventory")) return toolResponse("check_inventory", { skuQuery: "X1", quantity: 120 });
+      return textResponse("库存已查询，请查看拆仓方案。");
     }
     if (user.includes("什么价") || (user.includes("价格") && !user.includes("底线"))) {
-      return toolResponse("get_pricing", { customerId: "c_huachen", items: [{ sku: "X1", quantity: 120 }] });
+      if (!hasTool(messages, "get_pricing")) return toolResponse("get_pricing", { customerId: "c_huachen", items: [{ sku: "X1", quantity: 120 }] });
+      return textResponse("价格已计算，请查看报价明细。");
     }
     if (/政策|账期|有效期|底线|保修|验收|违约金|月结|换机|DOA/.test(user)) {
       if (!hasTool(messages, "search_knowledge")) return toolResponse("search_knowledge", { query: user, topK: 5 });
