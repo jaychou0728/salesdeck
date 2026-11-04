@@ -66,3 +66,24 @@ test("role switch enforces approval and inventory permissions", async ({ page })
   await page.getByTestId("nav-inventory").click();
   await expect(page.getByRole("button", { name: "调整" }).first()).toBeVisible();
 });
+
+test("keeps the same conversation across turns", async ({ page }) => {
+  const bodies: any[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().includes("/api/chat")) {
+      bodies.push(request.postDataJSON());
+    }
+  });
+
+  await page.goto("/dashboard");
+  await page.getByRole("button", { name: "AI 助手" }).click();
+  await page.getByPlaceholder("告诉我要做什么…").fill("今日晨报");
+  await page.getByRole("button", { name: "发送" }).click();
+  await expect(page.getByText("晨报已生成")).toBeVisible({ timeout: 30_000 });
+
+  await page.getByPlaceholder("告诉我要做什么…").fill("确认");
+  await page.getByRole("button", { name: "发送" }).click();
+  await expect.poll(() => bodies.length).toBe(2);
+  expect(bodies[0].conversationId).toBeTruthy();
+  expect(bodies[1].conversationId).toBe(bodies[0].conversationId);
+});
