@@ -26,30 +26,28 @@ export const contacts = [
   { id: "ct_xing_1", customerId: "c_xinghe", name: "周经理", title: "运营经理", phone: "133****6001", email: "zhou@xinghe.example", isPrimary: true },
 ];
 
-const productSeeds = [
-  ["p_x1", "X1", "X1 商用笔记本", "笔记本", yuan(7_499), yuan(6_200), yuan(6_999)],
-  ["p_x2", "X2", "X2 轻薄笔记本", "笔记本", yuan(5_999), yuan(4_900), yuan(5_499)],
-  ["p_m27", "M27", "M27 27 寸显示器", "显示器", yuan(1_899), yuan(1_450), yuan(1_699)],
-  ["p_d6", "D6", "D6 扩展坞", "配件", yuan(699), yuan(420), yuan(599)],
-  ["p_kb", "KB", "KB 无线键鼠套装", "配件", yuan(299), yuan(160), yuan(249)],
-] as const;
-
-export const products = Array.from({ length: 20 }, (_, index) => {
-  const base = productSeeds[index % productSeeds.length];
-  const suffix = index < productSeeds.length ? "" : `-${index}`;
-  return {
-    id: index < productSeeds.length ? base[0] : `p_${index}`,
-    sku: index < productSeeds.length ? base[1] : `${base[1]}${suffix}`,
-    name: index < productSeeds.length ? base[2] : `${base[2]} ${suffix}`,
-    category: base[3],
-    unit: "台",
-    listPriceCents: base[4],
-    costCents: base[5],
-    floorPriceCents: base[6],
-    taxRateBps: 1300,
-    status: "active",
-  };
-});
+export const products = [
+  { id: "p_x1", sku: "X1", name: "X1 商用笔记本", category: "笔记本", unit: "台", listPriceCents: yuan(7_499), costCents: yuan(6_200), floorPriceCents: yuan(6_999), taxRateBps: 1300, status: "active" },
+  { id: "p_x2", sku: "X2", name: "X2 轻薄笔记本", category: "笔记本", unit: "台", listPriceCents: yuan(5_999), costCents: yuan(4_900), floorPriceCents: yuan(5_499), taxRateBps: 1300, status: "active" },
+  { id: "p_m27", sku: "M27", name: "M27 27 寸显示器", category: "显示器", unit: "台", listPriceCents: yuan(1_899), costCents: yuan(1_450), floorPriceCents: yuan(1_699), taxRateBps: 1300, status: "active" },
+  { id: "p_d6", sku: "D6", name: "D6 扩展坞", category: "配件", unit: "个", listPriceCents: yuan(699), costCents: yuan(420), floorPriceCents: yuan(599), taxRateBps: 1300, status: "active" },
+  { id: "p_kb", sku: "KB", name: "KB 无线键鼠套装", category: "配件", unit: "套", listPriceCents: yuan(299), costCents: yuan(160), floorPriceCents: yuan(249), taxRateBps: 1300, status: "active" },
+  { id: "p_x3", sku: "X3", name: "X3 轻薄笔记本", category: "笔记本", unit: "台", listPriceCents: yuan(5_499), costCents: yuan(4_500), floorPriceCents: yuan(4_999), taxRateBps: 1300, status: "active" },
+  { id: "p_x4", sku: "X4", name: "X4 高性能笔记本", category: "笔记本", unit: "台", listPriceCents: yuan(6_999), costCents: yuan(5_700), floorPriceCents: yuan(6_499), taxRateBps: 1300, status: "active" },
+  { id: "p_x5", sku: "X5", name: "X5 移动工作站", category: "笔记本", unit: "台", listPriceCents: yuan(8_999), costCents: yuan(7_500), floorPriceCents: yuan(8_499), taxRateBps: 1300, status: "active" },
+  { id: "p_m24", sku: "M24", name: "M24 24 寸显示器", category: "显示器", unit: "台", listPriceCents: yuan(1_499), costCents: yuan(1_100), floorPriceCents: yuan(1_299), taxRateBps: 1300, status: "active" },
+  { id: "p_m32", sku: "M32", name: "M32 32 寸显示器", category: "显示器", unit: "台", listPriceCents: yuan(2_699), costCents: yuan(2_100), floorPriceCents: yuan(2_399), taxRateBps: 1300, status: "active" },
+  { id: "p_m34", sku: "M34", name: "M34 34 寸带鱼屏", category: "显示器", unit: "台", listPriceCents: yuan(3_299), costCents: yuan(2_600), floorPriceCents: yuan(2_999), taxRateBps: 1300, status: "active" },
+  { id: "p_d8", sku: "D8", name: "D8 双口扩展坞", category: "配件", unit: "个", listPriceCents: yuan(899), costCents: yuan(550), floorPriceCents: yuan(799), taxRateBps: 1300, status: "active" },
+  { id: "p_d10", sku: "D10", name: "D10 雷电扩展坞", category: "配件", unit: "个", listPriceCents: yuan(1_299), costCents: yuan(800), floorPriceCents: yuan(1_199), taxRateBps: 1300, status: "active" },
+  { id: "p_kbp", sku: "KBP", name: "KB Pro 机械键鼠套装", category: "配件", unit: "套", listPriceCents: yuan(399), costCents: yuan(220), floorPriceCents: yuan(349), taxRateBps: 1300, status: "active" },
+  { id: "p_kbm", sku: "KBM", name: "KB Mini 便携键鼠", category: "配件", unit: "套", listPriceCents: yuan(199), costCents: yuan(100), floorPriceCents: yuan(169), taxRateBps: 1300, status: "active" },
+  { id: "p_t1", sku: "T1", name: "T1 智能会议平板", category: "会议设备", unit: "台", listPriceCents: yuan(12_999), costCents: yuan(10_000), floorPriceCents: yuan(11_999), taxRateBps: 1300, status: "active" },
+  { id: "p_t2", sku: "T2", name: "T2 会议摄像头", category: "会议设备", unit: "台", listPriceCents: yuan(2_499), costCents: yuan(1_800), floorPriceCents: yuan(2_199), taxRateBps: 1300, status: "active" },
+  { id: "p_c1", sku: "C1", name: "C1 激光打印机", category: "办公设备", unit: "台", listPriceCents: yuan(1_899), costCents: yuan(1_400), floorPriceCents: yuan(1_699), taxRateBps: 1300, status: "active" },
+  { id: "p_c2", sku: "C2", name: "C2 企业路由器", category: "网络设备", unit: "台", listPriceCents: yuan(899), costCents: yuan(600), floorPriceCents: yuan(799), taxRateBps: 1300, status: "active" },
+  { id: "p_c3", sku: "C3", name: "C3 高速扫描仪", category: "办公设备", unit: "台", listPriceCents: yuan(1_599), costCents: yuan(1_100), floorPriceCents: yuan(1_399), taxRateBps: 1300, status: "active" },
+];
 
 export const priceRules = [
   { id: "pr_x1_a_1", productId: "p_x1", customerLevel: "A" as const, minQty: 1, unitPriceCents: yuan(7_499), discountBps: 0, priority: 10, effectiveFrom: 0, effectiveTo: null },

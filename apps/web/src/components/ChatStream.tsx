@@ -12,6 +12,7 @@ import { Button } from "./ui/Button";
 export function ChatStream() {
   const {
     actorId,
+    conversationId,
     messages,
     artifacts,
     streaming,
@@ -28,6 +29,7 @@ export function ChatStream() {
     setPendingApproval,
     setLastQuoteId,
     setChatContext,
+    setConversation,
     openAudit,
     bumpData,
   } = useAppStore();
@@ -39,10 +41,13 @@ export function ChatStream() {
     setStreaming(true);
     let assistantText = "";
     let assistantStarted = false;
+    const convId = conversationId ?? crypto.randomUUID();
+    if (!conversationId) setConversation(convId);
     try {
       await streamChat({
         message,
         actorId,
+        conversationId: convId,
         onEvent: (sse) => {
           const traceEvent = sse.payload;
           if (sse.type !== "token" && traceEvent?.type) addTrace(traceEvent as TraceEvent);
@@ -89,6 +94,13 @@ export function ChatStream() {
     }
   }
 
+  const lastAssistant = [...messages].reverse().find((message) => message.role === "assistant")?.content ?? "";
+  const needsConfirmation =
+    !streaming &&
+    !pendingApprovalId &&
+    !lastQuoteId &&
+    /请确认|确认后|是否|吗[？?]/.test(lastAssistant);
+
   return (
     <section className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2">
@@ -132,6 +144,26 @@ export function ChatStream() {
             <Button size="sm" onClick={() => send(`把报价 ${lastQuoteId} 转成订单`)} disabled={streaming}>
               转订单
             </Button>
+          </div>
+        ) : null}
+        {needsConfirmation ? (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+              disabled={streaming}
+              onClick={() => send("确认，继续")}
+            >
+              确认
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 disabled:opacity-50"
+              disabled={streaming}
+              onClick={() => send("取消")}
+            >
+              取消
+            </button>
           </div>
         ) : null}
         {streaming ? <div className="text-[11px] text-slate-400">正在处理…</div> : null}

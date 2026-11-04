@@ -88,6 +88,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   // manager can still act on the request that was just raised.
   resetChat: () =>
     set({
+      conversationId: undefined,
       messages: [],
       trace: [],
       artifacts: [],
@@ -97,8 +98,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       pendingPrompt: undefined,
     }),
 
-  openAi: (context) =>
-    set((state) => ({ aiOpen: true, chatContext: context ?? state.chatContext })),
+  openAi: (context) => set({ aiOpen: true, chatContext: context }),
   closeAi: () => set({ aiOpen: false }),
   setChatContext: (chatContext) => set({ chatContext }),
   queuePrompt: (pendingPrompt) => set({ pendingPrompt }),
