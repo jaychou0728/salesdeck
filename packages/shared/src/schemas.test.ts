@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  ConfirmRequest,
   ConvertQuoteToOrderInput,
   CreateAfterSalesTicketInput,
   CreateQuoteInput,
+  GetSalesPrioritiesInput,
   GetSalesBriefingInput,
+  LogFollowUpInput,
+  UpdateOpportunityNextActionInput,
   moneyCents,
 } from "./schemas.js";
 
@@ -90,5 +94,35 @@ describe("shared schemas", () => {
   it("limits briefing scope to self or team", () => {
     expect(GetSalesBriefingInput.parse({ scope: "team" }).scope).toBe("team");
     expect(() => GetSalesBriefingInput.parse({ scope: "all" })).toThrow();
+  });
+});
+
+describe("proactive sales contracts", () => {
+  it("parses priority scope and defaults", () => {
+    const parsed = GetSalesPrioritiesInput.parse({ scope: "self" });
+    expect(parsed.limit).toBe(5);
+    expect(parsed.focus).toBe("all");
+  });
+
+  it("rejects a follow-up commit without token and idempotency key", () => {
+    const result = LogFollowUpInput.safeParse({
+      customerId: "c_huachen",
+      type: "call",
+      content: "确认预算",
+      dryRun: false,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts the two new confirmation tool names", () => {
+    for (const toolName of ["log_follow_up", "update_opportunity_next_action"]) {
+      const result = ConfirmRequest.safeParse({
+        token: "1234567890",
+        toolName,
+        payload: {},
+        idempotencyKey: "idem-123456",
+      });
+      expect(result.success).toBe(true);
+    }
   });
 });

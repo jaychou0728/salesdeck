@@ -46,6 +46,7 @@ export const CreateQuoteInput = z
   .object({
     customerId: z.string().min(1),
     contactId: z.string().min(1),
+    opportunityId: z.string().min(1).optional(),
     lines: z.array(quoteLineInput).min(1).max(50),
     validDays: z.number().int().min(1).max(30).default(7),
     notes: z.string().max(500).optional(),
@@ -104,7 +105,13 @@ export type ChatRequest = z.infer<typeof ChatRequest>;
 
 export const ConfirmRequest = z.object({
   token: z.string().min(10),
-  toolName: z.enum(["create_quote", "convert_quote_to_order", "create_after_sales_ticket"]),
+  toolName: z.enum([
+    "create_quote",
+    "convert_quote_to_order",
+    "create_after_sales_ticket",
+    "log_follow_up",
+    "update_opportunity_next_action",
+  ]),
   payload: z.record(z.unknown()),
   idempotencyKey: z.string().min(8).max(100),
 });
@@ -116,3 +123,51 @@ export const ApprovalDecision = z.object({
   idempotencyKey: z.string().min(8).max(100),
 });
 export type ApprovalDecision = z.infer<typeof ApprovalDecision>;
+
+export const opportunityStage = z.enum(["lead", "needs", "solution", "quote", "negotiation", "won", "lost"]);
+export const riskLevel = z.enum(["low", "medium", "high"]);
+export const followUpType = z.enum(["call", "wechat", "email", "meeting", "quote", "system", "ai_suggestion"]);
+
+export const GetSalesPrioritiesInput = z.object({
+  scope: z.enum(["self", "team"]),
+  limit: z.number().int().min(1).max(10).default(5),
+  focus: z.enum(["all", "risk", "follow_up"]).default("all"),
+});
+export type GetSalesPrioritiesInput = z.infer<typeof GetSalesPrioritiesInput>;
+
+export const GetOpportunityDetailInput = z.object({
+  opportunityId: z.string().min(1),
+});
+export type GetOpportunityDetailInput = z.infer<typeof GetOpportunityDetailInput>;
+
+export const LogFollowUpInput = z
+  .object({
+    customerId: z.string().min(1),
+    opportunityId: z.string().min(1).optional(),
+    type: followUpType,
+    content: z.string().min(2).max(1000),
+    result: z.string().max(500).optional(),
+    nextAction: z.string().max(200).optional(),
+    nextActionDueAt: z.number().int().nonnegative().optional(),
+    dryRun: z.boolean(),
+    confirmationToken: z.string().min(10).optional(),
+    idempotencyKey: z.string().min(8).max(100).optional(),
+  })
+  .refine((value) => value.dryRun || (!!value.confirmationToken && !!value.idempotencyKey), {
+    message: "commit requires confirmationToken and idempotencyKey",
+  });
+export type LogFollowUpInput = z.infer<typeof LogFollowUpInput>;
+
+export const UpdateOpportunityNextActionInput = z
+  .object({
+    opportunityId: z.string().min(1),
+    nextAction: z.string().min(2).max(200),
+    nextActionDueAt: z.number().int().nonnegative().optional(),
+    dryRun: z.boolean(),
+    confirmationToken: z.string().min(10).optional(),
+    idempotencyKey: z.string().min(8).max(100).optional(),
+  })
+  .refine((value) => value.dryRun || (!!value.confirmationToken && !!value.idempotencyKey), {
+    message: "commit requires confirmationToken and idempotencyKey",
+  });
+export type UpdateOpportunityNextActionInput = z.infer<typeof UpdateOpportunityNextActionInput>;
