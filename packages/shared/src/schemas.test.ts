@@ -125,4 +125,63 @@ describe("proactive sales contracts", () => {
       expect(result.success).toBe(true);
     }
   });
+
+  it("requires credentials for a next-action commit", () => {
+    expect(
+      UpdateOpportunityNextActionInput.safeParse({
+        opportunityId: "o_test",
+        nextAction: "周五确认预算",
+        dryRun: false,
+      }).success,
+    ).toBe(false);
+
+    expect(
+      UpdateOpportunityNextActionInput.safeParse({
+        opportunityId: "o_test",
+        nextAction: "周五确认预算",
+        dryRun: false,
+        confirmationToken: "1234567890",
+        idempotencyKey: "idem-123456",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("accepts a follow-up commit with credentials", () => {
+    const result = LogFollowUpInput.safeParse({
+      customerId: "c_huachen",
+      type: "call",
+      content: "确认预算",
+      dryRun: false,
+      confirmationToken: "1234567890",
+      idempotencyKey: "idem-123456",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a dry-run follow-up without credentials", () => {
+    const result = LogFollowUpInput.safeParse({
+      customerId: "c_huachen",
+      type: "call",
+      content: "确认预算",
+      dryRun: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("preserves opportunityId on quote input", () => {
+    const parsed = CreateQuoteInput.parse({
+      customerId: "c_huachen",
+      contactId: "ct_zhang_1",
+      opportunityId: "o_test",
+      lines: [{ sku: "X1", quantity: 120 }],
+      dryRun: true,
+    });
+    expect(parsed.opportunityId).toBe("o_test");
+  });
+
+  it("rejects out-of-range priority limits and invalid focus", () => {
+    expect(GetSalesPrioritiesInput.safeParse({ scope: "self", limit: 0 }).success).toBe(false);
+    expect(GetSalesPrioritiesInput.safeParse({ scope: "self", limit: 11 }).success).toBe(false);
+    expect(GetSalesPrioritiesInput.safeParse({ scope: "self", focus: "revenue" }).success).toBe(false);
+  });
 });

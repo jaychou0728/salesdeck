@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { FOLLOW_UP_TYPES, OPPORTUNITY_STAGES, RISK_LEVELS } from "./types.js";
+import type { FollowUpType, OpportunityStage, RiskLevel } from "./types.js";
 
 export const moneyCents = z.number().int().nonnegative();
 export const quantity = z.number().int().positive().max(100_000);
@@ -124,9 +126,9 @@ export const ApprovalDecision = z.object({
 });
 export type ApprovalDecision = z.infer<typeof ApprovalDecision>;
 
-export const opportunityStage = z.enum(["lead", "needs", "solution", "quote", "negotiation", "won", "lost"]);
-export const riskLevel = z.enum(["low", "medium", "high"]);
-export const followUpType = z.enum(["call", "wechat", "email", "meeting", "quote", "system", "ai_suggestion"]);
+export const opportunityStage = z.enum([...OPPORTUNITY_STAGES] as [OpportunityStage, ...OpportunityStage[]]);
+export const riskLevel = z.enum([...RISK_LEVELS] as [RiskLevel, ...RiskLevel[]]);
+export const followUpType = z.enum([...FOLLOW_UP_TYPES] as [FollowUpType, ...FollowUpType[]]);
 
 export const GetSalesPrioritiesInput = z.object({
   scope: z.enum(["self", "team"]),

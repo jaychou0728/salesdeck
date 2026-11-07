@@ -92,9 +92,15 @@ export interface TraceEvent {
   traceId?: string;
 }
 
-export type OpportunityStage = "lead" | "needs" | "solution" | "quote" | "negotiation" | "won" | "lost";
-export type RiskLevel = "low" | "medium" | "high";
-export type FollowUpType = "call" | "wechat" | "email" | "meeting" | "quote" | "system" | "ai_suggestion";
+export const OPPORTUNITY_STAGES = ["lead", "needs", "solution", "quote", "negotiation", "won", "lost"] as const;
+export type OpportunityStage = (typeof OPPORTUNITY_STAGES)[number];
+
+export const RISK_LEVELS = ["low", "medium", "high"] as const;
+export type RiskLevel = (typeof RISK_LEVELS)[number];
+
+export const FOLLOW_UP_TYPES = ["call", "wechat", "email", "meeting", "quote", "system", "ai_suggestion"] as const;
+export type FollowUpType = (typeof FOLLOW_UP_TYPES)[number];
+
 export type PriorityLevel = "P0" | "P1" | "P2";
 
 export interface OpportunitySignals {
