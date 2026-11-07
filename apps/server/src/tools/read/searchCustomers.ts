@@ -1,6 +1,7 @@
 import { and, eq, inArray, like, or } from "drizzle-orm";
 import { SearchCustomersInput, ok } from "@salespilot/shared";
 import { contacts, customers } from "../../db/schema.js";
+import { scopedOwnerIds } from "../../lib/actor.js";
 import type { ToolDefinition } from "../types.js";
 
 export const searchCustomers: ToolDefinition<SearchCustomersInput, unknown> = {
@@ -11,7 +12,7 @@ export const searchCustomers: ToolDefinition<SearchCustomersInput, unknown> = {
   allowedRoles: ["sales", "manager"],
   execute(ctx, input) {
     const pattern = `%${input.query}%`;
-    const scope = ctx.actor.role === "sales" ? eq(customers.ownerId, ctx.actor.id) : undefined;
+    const scope = inArray(customers.ownerId, scopedOwnerIds(ctx.db, ctx.actor));
     const levelFilter = input.level ? eq(customers.level, input.level) : undefined;
 
     const directRows = ctx.db

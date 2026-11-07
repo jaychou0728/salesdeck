@@ -3,8 +3,8 @@
 > 生成方式：`pnpm eval`，使用真实工具注册表 + LangGraph 状态图 + 确定性 MockProvider 跑通 25 条 golden cases。
 > 每条用例都使用独立的内存 SQLite，重新执行迁移、seed 与知识库入库。
 
-- Total: 25
-- Passed: 25
+- Total: 30
+- Passed: 30
 - Pass rate: 100.0%
 - Failed: —
 
@@ -37,3 +37,8 @@
 | E23 | idempotency | create_quote | intent, search_customers, check_inventory, get_pricing, create_quote | ✅ |
 | E24 | boundary | get_customer_360 | intent, get_customer_360 | ✅ |
 | E25 | after_sales | search_knowledge, create_after_sales_ticket | intent, search_knowledge, create_after_sales_ticket | ✅ |
+| E26 | proactive | get_opportunity_detail, check_inventory | intent, get_opportunity_detail, check_inventory | ✅ |
+| E27 | proactive | get_sales_priorities | intent, get_sales_priorities | ✅ |
+| E28 | proactive | get_sales_priorities | intent, get_sales_priorities | ✅ |
+| E29 | proactive | log_follow_up | intent, log_follow_up | ✅ |
+| E30 | proactive | update_opportunity_next_action | intent, update_opportunity_next_action | ✅ |

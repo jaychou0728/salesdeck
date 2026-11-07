@@ -29,7 +29,7 @@ const results: EvalResult[] = [];
 let passed = 0;
 
 for (const testCase of cases) {
-  const useManager = testCase.input.includes("团队");
+  const useManager = testCase.input.includes("团队") || testCase.input.includes("本月");
   const { db, sqlite } = makeTestDb();
   try {
     seedDatabase(db);

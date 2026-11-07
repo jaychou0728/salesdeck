@@ -133,4 +133,28 @@ describe("agent graph", () => {
     expect(result.citations.length).toBeGreaterThan(0);
     expect(result.finalText).toBeTruthy();
   });
+
+  it("promotes a customer through proactive tools", async () => {
+    const { db, sqlite } = makeTestDb();
+    seedDatabase(db);
+    const events: any[] = [];
+    const ctx = { db, sqlite, actor, traceId: "t_promote", emit: (event: any) => events.push(event) };
+    const graph = buildAgentGraph({ provider: new MockProvider(), ctx, allTools });
+    await graph.invoke({
+      messages: [{ role: "user", content: "帮我推进华辰设计" }],
+      actor,
+      traceId: "t_promote",
+      intent: "business",
+      stepCount: 0,
+      pendingConfirmation: false,
+      citations: [],
+      toolCalls: [],
+      toolCounts: {},
+      budgetExceeded: false,
+      finalText: "",
+    });
+    const toolNames = events.filter((event) => event.type === "step.start").map((event) => event.name);
+    expect(toolNames).toContain("get_opportunity_detail");
+    expect(toolNames).toContain("check_inventory");
+  });
 });
