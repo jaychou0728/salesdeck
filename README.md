@@ -11,7 +11,10 @@ SalesPilot 是一个面向 B2B 销售团队的 **AI 优先销售工作台**：�
 | 能力 | 落点 |
 |---|---|
 | OpenAI 兼容网关 | `POST /v1/chat/completions` 透传 `tools`、`role:tool`、流式 `tool_calls` |
-| 9 个业务工具 | 客户、360、库存、定价、知识检索、晨报、报价、转订单、售后工单 |
+| 销售作战室 | 今日优先级、待办、风险商机、经理驾驶舱 |
+| 商机与跟进 | 一客户多商机、下一步行动、跟进时间线与客户推进中心 |
+| AI 主动推进 | 优先级查询、商机详情、记录跟进、更新下一步，共 13 个业务工具 |
+| 13 个业务工具 | 客户、360、库存、定价、知识检索、晨报、优先级、商机详情、报价、转订单、售后工单、记录跟进、更新下一步 |
 | 写操作安全 | dry-run 预览 → 一次性确认令牌 → 提交；幂等键防重复提交；服务端价格 |
 | 风控与权限 | 角色/数据范围在工具层校验；信用超额与低于底线走经理审批 |
 | RAG 政策问答 | 本地 n-gram 向量 + BM25/RRF 混合检索；证据门槛；返回引用 |
@@ -87,7 +90,7 @@ docker compose up --build
 ```bash
 pnpm test        # 单元 + 集成测试（Vitest）
 pnpm test:e2e    # Playwright 端到端（晨报 → 报价 → 审批 → 下单 → 售后）
-pnpm eval        # Agent golden cases 评测，生成 docs/EVAL_REPORT.md
+pnpm eval        # Agent golden cases 评测（30 条），生成 docs/EVAL_REPORT.md
 pnpm build       # 依次构建 shared / server / web
 ```
 
@@ -110,12 +113,12 @@ apps/
     src/
       agent/       Provider 适配、LangGraph 状态图、trace
       db/          Schema、迁移、seed
-      domain/      定价、库存、信用、状态机、权限、幂等、确认令牌、审批
+      domain/      定价、库存、信用、状态机、权限、幂等、确认令牌、审批、优先级、作战室、跟进
       eval/        Agent golden cases 评测入口
       gateway/     OpenAI 兼容网关、SSE
       rag/         切块、n-gram 向量、入库、混合检索
-      routes/      chat / confirmations / approvals / briefing / business / traces / demo
-      tools/       9 个工具（6 读 + 3 写）与注册表
+      routes/      chat / confirmations / approvals / briefing / business / workspace / followUps / traces / demo
+      tools/       13 个工具（8 读 + 5 写）与注册表
   web/             React + Vite + Tailwind 两栏工作台
     src/
       api/         SSE 客户端

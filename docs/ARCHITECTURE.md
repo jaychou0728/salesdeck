@@ -5,14 +5,15 @@
 ## 1. 总览
 
 ```
-React SPA（两栏：对话流 + 执行链路/业务面板）
+React SPA（作战室首页 + 商机/客户推进中心 + AI 抽屉）
         │  REST + SSE
 Fastify 后端
   ├─ /v1/chat/completions        OpenAI 兼容网关（tools / role:tool / 流式 tool_calls）
   ├─ /api/chat                   SSE 业务对话（trace 事件 + artifact）
   ├─ Agent Runtime               LangGraph.js 显式状态图
   ├─ Trace 服务                  事件持久化 + 回放查询
-  ├─ Tool Registry               9 个工具：Zod 校验 / 角色权限 / 审计 / SSE 步骤
+  ├─ Tool Registry               13 个工具：Zod 校验 / 角色权限 / 审计 / SSE 步骤
+  ├─ Workspace Service           优先级引擎、商机/跟进聚合、经理驾驶舱
   ├─ Business Services           定价、库存、信用、状态机、幂等、确认令牌、审批、晨报
   ├─ RAG                         切块 → n-gram 向量 → BM25+向量 RRF → 证据门槛 → 引用
   └─ SQLite + Drizzle            业务 / 知识 / 审计 / trace / 幂等 / 令牌
@@ -28,12 +29,12 @@ Fastify 后端
 | Provider | `apps/server/src/agent` | `ChatProvider` 接口、DeepSeek、Mock、LangGraph 图、trace 记录 |
 | 数据库 | `apps/server/src/db` | Schema、迁移、seed 数据 |
 | 业务域 | `apps/server/src/domain` | 定价、库存分配、信用、状态机、权限、幂等、确认令牌、审批、订单 |
-| 工具 | `apps/server/src/tools` | 6 个读工具 + 3 个写工具、注册表与统一执行器 |
+| 工具 | `apps/server/src/tools` | 8 个读工具 + 5 个写工具、注册表与统一执行器 |
 | RAG | `apps/server/src/rag` | Markdown 切块、哈希向量、入库、混合检索 |
 | 网关 | `apps/server/src/gateway` | OpenAI 兼容路由、SSE 封装 |
 | 路由 | `apps/server/src/routes` | chat、确认、审批、晨报、业务面板、会话、trace、demo reset |
-| 评测 | `apps/server/src/eval/run.ts` | 25 条 golden cases，生成 `docs/EVAL_REPORT.md` |
-| 前端 | `apps/web/src` | SSE 客户端、Zustand store、两栏工作台与业务卡片 |
+| 评测 | `apps/server/src/eval/run.ts` | 30 条 golden cases，生成 `docs/EVAL_REPORT.md` |
+| 前端 | `apps/web/src` | 作战室、商机页、客户推进中心、AI 抽屉与业务卡片 |
 
 依赖方向：`routes → agent/tools → domain → db`；`shared` 只放契约，不依赖运行时。
 
@@ -58,9 +59,24 @@ tools ──(pendingConfirmation / budgetExceeded / stepCount>=8)──→ respo
 
 状态字段：`messages`、`actor`、`traceId`、`intent`、`stepCount`、`pendingConfirmation`、`citations`、`toolCalls`、`toolCounts`、`budgetExceeded`、`finalText`。
 
-**Mock Provider** 按输入关键词返回确定性的工具调用脚本（晨报、客户 360、库存、价格、知识检索、售后、报价、转订单），用于离线演示、协议测试与评测；除非显式 `LLM_PROVIDER=deepseek` 且存在 Key，否则自动使用 Mock。
+**Mock Provider** 按输入关键词返回确定性的工具调用脚本（晨报、客户 360、库存、价格、知识检索、售后、报价、转订单，以及主动推进、优先级、记录跟进、更新下一步），用于离线演示、协议测试与评测；除非显式 `LLM_PROVIDER=deepseek` 且存在 Key，否则自动使用 Mock。
 
-## 4. 工具契约（9 个）
+### 3.1 作战室数据流
+
+```text
+opportunities + follow_ups + quotes + orders + inventory + credit
+        ↓
+domain/priority.ts（金额 × 概率 × 紧迫度 × 风险，输出 P0/P1/P2 与原因）
+        ↓
+domain/workspace.ts（self / team 聚合：指标、优先级、待办、风险、排行）
+        ↓
+/api/business/workspace ──→ 前端作战室 / 经理驾驶舱
+        └──→ get_sales_priorities / get_opportunity_detail（AI 工具）
+```
+
+AI 与前端共用同一套 `domain/workspace` 输出，避免“页面看到的优先级”和“AI 判断的优先级”不一致。
+
+## 4. 工具契约（13 个）
 
 统一返回信封：
 
@@ -83,6 +99,10 @@ type ToolResult<T> =
 | 7 | `create_quote` | 写 | `customerId, contactId, lines, validDays?, dryRun, confirmationToken?, idempotencyKey?` | dry-run 出预览与令牌；提交时重算价格；低于底线转 `pending_approval` |
 | 8 | `convert_quote_to_order` | 写 | `quoteId, paymentTerms?, dryRun, ...` | 校验报价状态、信用、库存；库存不足直接拒绝；信用不足创建审批，不建订单 |
 | 9 | `create_after_sales_ticket` | 写 | `customerId, orderId?, productId, serialNo?, issueType, description, policyRefs[], dryRun, ...` | `policyRefs` 必须真实存在于知识库 chunk；先预览再提交 |
+| 10 | `get_sales_priorities` | 读 | `scope, limit?, focus?` | 复用 `domain/workspace`，返回今日优先级、指标、待办；`team` 仅经理 |
+| 11 | `get_opportunity_detail` | 读 | `opportunityId` | 商机 + 客户 + 关联报价/订单 + 跟进 + 风险信号 + 建议下一步 |
+| 12 | `log_follow_up` | 写 | `customerId, opportunityId?, type, content, result?, nextAction?, nextActionDueAt?, dryRun, ...` | dry-run 预览；提交写跟进并同步商机下一步与最近跟进时间 |
+| 13 | `update_opportunity_next_action` | 写 | `opportunityId, nextAction, nextActionDueAt?, dryRun, ...` | dry-run 预览；提交更新商机下一步 |
 
 注册表统一执行流程（`tools/registry.ts`）：`step.start` → Zod 校验 → 角色校验 → 执行业务 → 写 `audit_logs` → `step.end` → 发送 `artifact`。参数与结果中的 `confirmationToken` / `idempotencyKey` / `token` 会脱敏后才进入审计与事件。
 
@@ -107,7 +127,7 @@ type ToolResult<T> =
 
 ## 7. 前端与 SSE
 
-- **布局**：React + Vite + Tailwind 两栏。左栏 `ChatStream`（消息、计划摘要、工具 chip、报价/工单/审批卡片、确认卡），右栏固定 380px，含「执行链路 / 业务」两个页签；晨报收进顶部 `BriefingDrawer`；顶部可切换销售/经理身份。
+- **布局**：React + Vite + Tailwind。首页为销售作战室：指标条、AI 今日建议（P0/P1/P2 卡片）、我的待办、风险商机、经理销售排行；商机页与客户推进中心展示当前商机、下一步、AI 判断与跟进时间线。AI 助手保留为右侧抽屉，内含 `ChatStream`、报价/跟进/下一步确认卡与「查看执行详情」；顶部可切换销售/经理身份。
 - **流式协议**：`POST /api/chat` 使用 SSE，帧格式 `id: n` / `event: <type>` / `data: <json>`；事件类型包括 `trace.start`、`step.start`、`step.end`、`token`、`artifact`、`error`、`trace.end`。
 - **客户端**：`apps/web/src/api/sse.ts` 使用 `fetch` + `ReadableStream` 解析帧；`state/store.ts`（Zustand）累积消息、trace 与 artifact。
 - **可解释性**：`TraceTimeline` 展示每步名称、状态与入参/出参 JSON；`BusinessPanel` 读取 `/api/business/*` 展示客户、库存、报价、审批；trace 持久化后可通过 `GET /api/traces/:id` 回放。
@@ -123,6 +143,11 @@ type ToolResult<T> =
 | POST | `/api/confirmations/confirm` | 确认令牌兑换并提交写操作 |
 | POST | `/api/approvals/:id/decide` | 经理审批（幂等） |
 | GET | `/api/briefing?scope=self\|team` | 晨报 |
+| GET | `/api/business/workspace` | 作战室聚合：指标、优先级、待办、风险、团队排行 |
+| GET | `/api/business/opportunities` | 商机列表（stage / risk / customerId / ownerId 筛选） |
+| GET | `/api/business/opportunities/:id` | 商机详情、关联交易与跟进 |
+| PATCH | `/api/business/opportunities/:id` | 更新阶段、概率、风险、下一步 |
+| POST | `/api/business/follow-ups` | 记录跟进并同步商机下一步 |
 | GET | `/api/business/{customers,inventory,quotes,approvals}` | 业务面板只读数据 |
 | GET | `/api/conversations`、`/api/conversations/:id` | 会话历史 |
 | GET | `/api/traces/:id` | trace 详情与事件序列 |
@@ -131,7 +156,8 @@ type ToolResult<T> =
 
 ## 9. 数据模型
 
-- **主数据**：`users`、`customers`、`contacts`、`products`、`price_rules`、`warehouses`、`inventory`。
+- **主数据**：`users`（含 `monthly_target_cents`）、`customers`、`contacts`、`products`、`price_rules`、`warehouses`、`inventory`。
+- **商机与跟进**：`opportunities`、`follow_ups`；`quotes.opportunity_id`、`orders.opportunity_id` 显式关联商机。
 - **交易**：`quotes`、`quote_lines`、`orders`、`order_lines`、`stock_reservations`、`approvals`、`after_sales_tickets`。
 - **智能与审计**：`conversations`、`messages`、`traces`、`trace_events`、`audit_logs`、`idempotency_keys`、`confirmation_tokens`、`knowledge_docs`、`knowledge_chunks`。
 - 金额统一以「分」为整数存储；seed 使用固定 ID 与相对当前时间的有效期，保证可复现。
@@ -145,6 +171,6 @@ type ToolResult<T> =
 
 ## 11. 质量证据
 
-- Vitest：服务端 74 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、9 个工具契约、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 15 条路径。
-- Playwright：2 条端到端测试。
-- Agent 评测：25 条 golden cases，当前通过率 100%（见 `docs/EVAL_REPORT.md`）。
+- Vitest：shared 14 个测试 + 服务端 117 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、13 个工具契约、优先级引擎、workspace 聚合、商机/跟进、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
+- Playwright：7 条端到端测试（含作战室、客户跟进、经理视图与 AI 推进）。
+- Agent 评测：30 条 golden cases，当前通过率 100%（见 `docs/EVAL_REPORT.md`）。
