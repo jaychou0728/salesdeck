@@ -82,7 +82,15 @@ export function ChatStream() {
   function onCommitted(result: any) {
     const status = result?.data?.status;
     if (status === "committed") {
-      const message = result.data.ticket ? "工单已创建。" : result.data.order ? "订单已创建。" : "报价已生成。";
+      const message = result.data.followUp
+        ? "跟进已记录。"
+        : result.data.nextAction
+          ? "下一步已更新。"
+          : result.data.ticket
+            ? "工单已创建。"
+            : result.data.order
+              ? "订单已创建。"
+              : "报价已生成。";
       addMessage({ role: "assistant", content: message });
       if (result.data.quote?.id) setLastQuoteId(result.data.quote.id);
       bumpData();
@@ -130,6 +138,18 @@ export function ChatStream() {
         {messages.length === 0 && !pendingApprovalId ? (
           <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-xs leading-relaxed text-slate-500">
             我是销售助手。可以帮你查客户、查库存、报价、转订单或创建售后工单。业务页面里的操作也可以用这里的对话完成。
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {["今天哪些客户最值得跟进", "帮我推进华辰设计", "记录一条跟进"].map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => void send(prompt)}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-600 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
         {messages.map((message, index) => (

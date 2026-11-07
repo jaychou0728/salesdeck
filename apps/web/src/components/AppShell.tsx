@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Shield,
   ShoppingCart,
+  Target,
   Users,
   Wrench,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import { Spinner } from "./ui/Feedback";
 const BASE_NAV = [
   { to: "/dashboard", label: "工作台", icon: LayoutDashboard, testId: "nav-dashboard" },
   { to: "/customers", label: "客户", icon: Users, testId: "nav-customers" },
+  { to: "/opportunities", label: "商机", icon: Target, testId: "nav-opportunities" },
   { to: "/inventory", label: "库存", icon: Package, testId: "nav-inventory" },
   { to: "/quotes", label: "报价", icon: FileText, testId: "nav-quotes" },
   { to: "/orders", label: "订单", icon: ShoppingCart, testId: "nav-orders" },

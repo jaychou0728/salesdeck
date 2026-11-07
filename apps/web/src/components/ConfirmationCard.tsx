@@ -18,7 +18,18 @@ export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact
   const lines: any[] = preview?.lines ?? [];
   const total = preview?.totals?.totalCents ?? preview?.totalCents ?? 0;
   const isConvert = artifact.toolName === "convert_quote_to_order";
-  const confirmLabel = isConvert ? "确认提交" : "确认生成";
+  const isFollowUp = artifact.toolName === "log_follow_up";
+  const isNextAction = artifact.toolName === "update_opportunity_next_action";
+  const FOLLOW_UP_LABELS: Record<string, string> = {
+    call: "电话",
+    wechat: "微信",
+    email: "邮件",
+    meeting: "会议",
+    quote: "报价",
+    system: "系统动作",
+    ai_suggestion: "AI 建议",
+  };
+  const confirmLabel = isConvert ? "确认提交" : isFollowUp ? "确认记录" : isNextAction ? "确认更新" : "确认生成";
 
   async function confirm() {
     setLoading(true);
@@ -48,7 +59,9 @@ export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact
           <div className="text-sm font-semibold text-slate-800">{artifact.title}</div>
           {preview?.customer?.name ? <div className="mt-0.5 text-[11px] text-slate-500">{preview.customer.name}</div> : null}
         </div>
-        <div className="text-sm font-semibold tabular-nums text-slate-900">{formatMoney(total)}</div>
+        {!isFollowUp && !isNextAction ? (
+          <div className="text-sm font-semibold tabular-nums text-slate-900">{formatMoney(total)}</div>
+        ) : null}
       </div>
 
       {isConvert ? (
@@ -66,6 +79,22 @@ export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact
             <span className={preview.canFulfill === false ? "text-rose-600" : "text-emerald-700"}>{preview.canFulfill === false ? "否" : "是"}</span>
           </div>
           {preview.requiresApproval ? <div className="text-amber-700">信用不足，提交后将转经理审批。</div> : null}
+        </div>
+      ) : null}
+
+      {isFollowUp ? (
+        <div className="mb-2 space-y-1 rounded-lg bg-slate-50 p-2 text-[11px] text-slate-600">
+          <div className="flex justify-between"><span>跟进方式</span><span className="font-medium">{FOLLOW_UP_LABELS[preview.type] ?? preview.type}</span></div>
+          <div>内容：{preview.content}</div>
+          {preview.result ? <div>结果：{preview.result}</div> : null}
+          {preview.nextAction ? <div>下一步：{preview.nextAction}</div> : null}
+        </div>
+      ) : null}
+
+      {isNextAction ? (
+        <div className="mb-2 space-y-1 rounded-lg bg-slate-50 p-2 text-[11px] text-slate-600">
+          <div>商机：{preview.name ?? preview.opportunityId}</div>
+          <div>下一步：{preview.nextAction}</div>
         </div>
       ) : null}
 

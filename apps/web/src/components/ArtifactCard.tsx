@@ -3,7 +3,8 @@ import { formatMoney } from "../lib/utils";
 import { ConfirmationCard } from "./ConfirmationCard";
 
 export function ArtifactCard({ artifact, onCommitted }: { artifact: Artifact; onCommitted: (result: any) => void }) {
-  if (artifact.kind === "quote" && artifact.confirmationToken) return <ConfirmationCard artifact={artifact} onCommitted={onCommitted} />;
+  const confirmable = artifact.confirmationToken && ["quote", "follow_up", "next_action"].includes(artifact.kind);
+  if (confirmable) return <ConfirmationCard artifact={artifact} onCommitted={onCommitted} />;
   const payload = artifact.payload as any;
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
