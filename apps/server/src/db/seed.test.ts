@@ -5,7 +5,9 @@ import { seedDatabase } from "./seed.js";
 import {
   contacts,
   customers,
+  followUps,
   inventory,
+  opportunities,
   orderLines,
   orders,
   priceRules,
@@ -22,18 +24,20 @@ describe("seed", () => {
     const { db } = makeTestDb();
     seedDatabase(db);
     seedDatabase(db);
-    expect(db.select().from(users).all()).toHaveLength(2);
-    expect(db.select().from(customers).all()).toHaveLength(8);
-    expect(db.select().from(contacts).all()).toHaveLength(7);
-    expect(db.select().from(products).all()).toHaveLength(20);
+    expect(db.select().from(users).all()).toHaveLength(4);
+    expect(db.select().from(customers).all()).toHaveLength(15);
+    expect(db.select().from(contacts).all()).toHaveLength(14);
+    expect(db.select().from(products).all()).toHaveLength(21);
     expect(db.select().from(priceRules).all()).toHaveLength(5);
     expect(db.select().from(warehouses).all()).toHaveLength(3);
-    expect(db.select().from(inventory).all()).toHaveLength(7);
-    expect(db.select().from(quotes).all()).toHaveLength(3);
-    expect(db.select().from(quoteLines).all()).toHaveLength(3);
-    expect(db.select().from(orders).all()).toHaveLength(1);
-    expect(db.select().from(orderLines).all()).toHaveLength(1);
-    expect(db.select().from(stockReservations).all()).toHaveLength(1);
+    expect(db.select().from(inventory).all()).toHaveLength(12);
+    expect(db.select().from(quotes).all()).toHaveLength(7);
+    expect(db.select().from(quoteLines).all()).toHaveLength(7);
+    expect(db.select().from(orders).all()).toHaveLength(4);
+    expect(db.select().from(orderLines).all()).toHaveLength(4);
+    expect(db.select().from(stockReservations).all()).toHaveLength(4);
+    expect(db.select().from(opportunities).all()).toHaveLength(12);
+    expect(db.select().from(followUps).all()).toHaveLength(6);
   });
 
   it("keeps the quote, order and reservation chain consistent", () => {
@@ -82,5 +86,32 @@ describe("seed", () => {
     const shanghai = db.select().from(warehouses).where(eq(warehouses.region, "上海")).get();
     const shanghaiRow = rows.find((row) => row.warehouseId === shanghai!.id);
     expect(shanghaiRow!.onHand - shanghaiRow!.reserved).toBe(0);
+  });
+
+  it("seeds the war room story", () => {
+    const { db } = makeTestDb();
+    const now = Date.now();
+    seedDatabase(db, now);
+    const huachen = db.select().from(opportunities).where(eq(opportunities.id, "o_huachen_server")).get();
+    expect(huachen?.stage).toBe("quote");
+    expect(huachen?.amountCents).toBe(28_000_000);
+    expect(huachen?.riskLevel).toBe("high");
+    const linkedQuote = db.select().from(quotes).where(eq(quotes.opportunityId, "o_huachen_server")).get();
+    expect(linkedQuote?.totalCents).toBe(31_640_000);
+    const srv = db.select().from(products).where(eq(products.sku, "SRV")).get();
+    const stock = db.select().from(inventory).where(eq(inventory.productId, srv!.id)).all();
+    expect(stock.reduce((sum, row) => sum + row.onHand - row.reserved, 0)).toBe(15);
+  });
+
+  it("seeds team sales for manager ranking", () => {
+    const { db } = makeTestDb();
+    const now = Date.now();
+    seedDatabase(db, now);
+    const monthStart = new Date(now);
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const rows = db.select().from(orders).all().filter((order) => order.createdAt >= monthStart.getTime());
+    expect(rows.some((order) => order.ownerId === "u_sales_wang")).toBe(true);
+    expect(rows.some((order) => order.ownerId === "u_sales_chen")).toBe(true);
   });
 });

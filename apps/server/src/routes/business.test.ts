@@ -359,7 +359,7 @@ describe("business workspace", () => {
     for (const key of ["customers", "openQuotes", "pendingApprovals", "lowStock", "openTickets"]) {
       expect(typeof salesBody.metrics[key]).toBe("number");
     }
-    expect(salesBody.metrics.customers).toBe(8);
+    expect(salesBody.metrics.customers).toBe(9);
     expect(salesBody.metrics.lowStock).toBeGreaterThan(0);
     expect(salesBody.alerts.length).toBeGreaterThan(0);
     expect(salesBody.recentQuotes.length).toBeGreaterThan(0);

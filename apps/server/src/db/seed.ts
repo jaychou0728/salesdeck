@@ -3,7 +3,9 @@ import { createDb, type Db } from "./client.js";
 import {
   contacts,
   customers,
+  followUps,
   inventory,
+  opportunities,
   orderLines,
   orders,
   priceRules,
@@ -15,6 +17,8 @@ import {
   warehouses,
 } from "./schema.js";
 import {
+  buildFollowUpSeeds,
+  buildOpportunitySeeds,
   buildOrderSeeds,
   buildQuoteSeeds,
   contacts as contactSeeds,
@@ -37,6 +41,8 @@ export function seedDatabase(db: Db, now = Date.now()) {
   db.insert(priceRules).values(priceRuleSeeds).onConflictDoNothing().run();
   db.insert(warehouses).values(warehouseSeeds).onConflictDoNothing().run();
   db.insert(inventory).values(inventoryRows).onConflictDoNothing().run();
+  db.insert(opportunities).values(buildOpportunitySeeds(now)).onConflictDoNothing().run();
+  db.insert(followUps).values(buildFollowUpSeeds(now)).onConflictDoNothing().run();
   db.insert(quotes).values(buildQuoteSeeds(now)).onConflictDoNothing().run();
   db.insert(quoteLines).values(quoteLineSeeds).onConflictDoNothing().run();
   db.insert(orders).values(buildOrderSeeds(now)).onConflictDoNothing().run();

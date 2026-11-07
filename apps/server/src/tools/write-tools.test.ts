@@ -92,7 +92,7 @@ describe("write tools", () => {
     expect(orderResult.model.ok).toBe(true);
     expect((orderResult.model as any).data.status).toBe("pending_approval");
     expect(db.select().from(approvals).all()).toHaveLength(1);
-    expect(db.select().from(orders).all()).toHaveLength(1);
+    expect(db.select().from(orders).all()).toHaveLength(4);
   });
 
   it("approves and creates the order with reserved stock", async () => {

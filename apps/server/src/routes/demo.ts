@@ -19,7 +19,31 @@ export function registerDemo(app: FastifyInstance, deps: { db: Db; sqlite: Datab
       },
       async (_request, reply) => {
         if (process.env.DEMO_MODE !== "true") return reply.code(403).send({ ok: false, error: { code: "FORBIDDEN", message: "demo mode disabled" } });
-        const tables = ["messages", "conversations", "trace_events", "traces", "audit_logs", "idempotency_keys", "confirmation_tokens", "after_sales_tickets", "approvals", "stock_reservations", "order_lines", "orders", "quote_lines", "quotes", "inventory", "warehouses", "price_rules", "products", "contacts", "customers", "users"];
+        const tables = [
+          "follow_ups",
+          "opportunities",
+          "messages",
+          "conversations",
+          "trace_events",
+          "traces",
+          "audit_logs",
+          "idempotency_keys",
+          "confirmation_tokens",
+          "after_sales_tickets",
+          "approvals",
+          "stock_reservations",
+          "order_lines",
+          "orders",
+          "quote_lines",
+          "quotes",
+          "inventory",
+          "warehouses",
+          "price_rules",
+          "products",
+          "contacts",
+          "customers",
+          "users",
+        ];
         deps.sqlite.transaction(() => {
           for (const table of tables) deps.sqlite.prepare(`delete from ${table}`).run();
           seedDatabase(deps.db);
