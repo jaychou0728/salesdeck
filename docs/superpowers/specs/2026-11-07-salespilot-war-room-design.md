@@ -36,7 +36,7 @@
 
 | 能力 | 现有落点 | 本次处理 |
 |---|---|---|
-| 9 个业务工具 | `apps/server/src/tools/*` | 保留，新增 4 个主动工具，扩展 1 个读工具 |
+| 9 个业务工具 | `apps/server/src/tools/*` | 保留，新增 5 个工具（4 个业务工具 + 1 个动作建议工具），扩展 1 个读工具 |
 | LangGraph 执行链 | `apps/server/src/agent/graph.ts` | 保留，仅更新 Prompt 与 Mock 脚本 |
 | SSE / trace / 审计 | `routes/chat.ts`、`agent/trace.ts` | 保留，首页不展示，抽屉内展开 |
 | 写操作安全 | `domain/confirmation.ts`、`idempotency.ts` | 新写工具复用同一模式 |
@@ -351,6 +351,14 @@ POST  /api/business/follow-ups
 
 返回商机、客户、联系人、关联报价/订单、最近跟进、风险信号、建议下一步。销售只能读自己客户。
 
+**`suggest_actions`（UI 动作工具）**
+
+```ts
+{ actions: Array<{ label: string; prompt: string }> } // 1–4 个
+```
+
+返回 `actions` artifact，前端渲染为可点击按钮；无业务副作用。用于把 AI 的“可继续执行选项”从正文文本变成结构化 UI。
+
 ### 8.2 扩展读工具
 
 `get_customer_360` 增加 `opportunities` 与 `followUps`，保持原有字段不变。
@@ -549,7 +557,7 @@ Mock Provider 新增确定性脚本：
 
 1. **数据层**：Schema、迁移、seed、demo reset、优先级纯函数与测试。
 2. **业务层**：workspace/opportunity/follow-up 服务与 API、客户详情扩展、报价/订单商机关联。
-3. **AI 层**：4 个新工具、Prompt、Mock、评测用例。
+3. **AI 层**：5 个新工具（含动作建议）、Prompt、Mock、评测用例。
 4. **前端**：作战室 → 商机页 → 客户推进中心 → 确认卡/跟进弹窗 → 经理视图。
 5. **验证与文档**：测试、E2E、截图、README/ARCHITECTURE/DEMO_SCRIPT 更新。
 

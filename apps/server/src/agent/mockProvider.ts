@@ -16,6 +16,13 @@ function pickOpportunityId(user: string) {
   return "o_huachen_server";
 }
 
+function pickCustomerName(user: string) {
+  if (user.includes("远山")) return "远山制造";
+  if (user.includes("星河")) return "星河零售";
+  if (user.includes("智航")) return "智航电子";
+  return "华辰设计";
+}
+
 export class MockProvider implements ChatProvider {
   name = "mock";
 
@@ -33,8 +40,19 @@ export class MockProvider implements ChatProvider {
       if (!hasTool(messages, "check_inventory")) {
         return toolResponse("check_inventory", { skuQuery: "SRV", quantity: 20 });
       }
+      if (!hasTool(messages, "suggest_actions")) {
+        const customer = pickCustomerName(user);
+        return toolResponse("suggest_actions", {
+          actions: [
+            { label: "拉取 360 + 库存", prompt: `拉取${customer}客户 360 和库存拆仓方案` },
+            { label: "试算转订单", prompt: `把${customer}的报价试算转订单` },
+            { label: "准备最终报价", prompt: `为${customer}准备最终报价` },
+            { label: "生成跟进话术", prompt: `为${customer}生成采购跟进话术` },
+          ],
+        });
+      }
       return textResponse(
-        "我先分析了这个商机：客户处于报价阶段，最近一次跟进后已有 5 天没有新进展；关联报价将在 48 小时内到期；当前 SRV 可用库存低于需求。\n建议：今天先联系采购确认预算审批与交付时间，再决定是否申请备货或调拨。\n我可以继续帮你：① 生成跟进话术 ② 记录本次跟进 ③ 调整下一步时间 ④ 准备新的报价。",
+        "我先分析了这个商机：客户处于报价阶段，最近一次跟进后已有 5 天没有新进展；关联报价将在 48 小时内到期；当前 SRV 可用库存低于需求。\n建议：今天先联系采购确认预算审批与交付时间，再决定是否申请备货或调拨。\n下面是可继续执行的选项，点击即可继续。",
       );
     }
     if (user.includes("今天") && (user.includes("跟进") || user.includes("最值得"))) {

@@ -153,36 +153,45 @@ export const stockReservationSeeds = [
 export function buildOpportunitySeeds(now: number): Array<typeof opportunitiesTable.$inferInsert> {
   const day = 86_400_000;
   const hour = 3_600_000;
-  const todayAt = (hourOfDay: number) => {
+  // Business-facing dates are normalized to 17:00 local time so demo due dates
+  // look intentional instead of inheriting the reset time.
+  const at = (dayOffset: number, hourOfDay = 17) => {
     const date = new Date(now);
+    date.setDate(date.getDate() + dayOffset);
     date.setHours(hourOfDay, 0, 0, 0);
     return date.getTime();
   };
   return [
-    { id: "o_huachen_server", customerId: "c_huachen", ownerId: "u_sales_lin", name: "服务器采购", amountCents: 28_000_000, stage: "quote", probability: 70, expectedCloseDate: now + 20 * day, nextAction: "联系采购确认预算审批与交付时间", nextActionDueAt: todayAt(17), riskLevel: "high", lastFollowUpAt: now - 5 * day, createdAt: now - 30 * day, updatedAt: now - 5 * day },
-    { id: "o_huachen_storage", customerId: "c_huachen", ownerId: "u_sales_lin", name: "存储扩容", amountCents: 12_000_000, stage: "solution", probability: 50, expectedCloseDate: now + 40 * day, nextAction: "确认扩容容量与预算", nextActionDueAt: now + 3 * day, riskLevel: "medium", lastFollowUpAt: now - 12 * day, createdAt: now - 45 * day, updatedAt: now - 12 * day },
-    { id: "o_yuanshan_storage", customerId: "c_yuanshan", ownerId: "u_sales_lin", name: "存储扩容", amountCents: 12_000_000, stage: "negotiation", probability: 65, expectedCloseDate: now + 15 * day, nextAction: "发送最终报价", nextActionDueAt: todayAt(17), riskLevel: "low", lastFollowUpAt: now - 2 * hour, createdAt: now - 25 * day, updatedAt: now - 2 * hour },
-    { id: "o_xinghe_maintenance", customerId: "c_xinghe", ownerId: "u_sales_lin", name: "年度维保", amountCents: 6_000_000, stage: "needs", probability: 30, expectedCloseDate: now + 30 * day, nextAction: "梳理设备清单", nextActionDueAt: now + 5 * day, riskLevel: "low", lastFollowUpAt: now - 3 * day, createdAt: now - 20 * day, updatedAt: now - 3 * day },
-    { id: "o_haichuan_workstation", customerId: "c_haichuan", ownerId: "u_sales_lin", name: "移动工作站采购", amountCents: 15_000_000, stage: "needs", probability: 25, expectedCloseDate: now + 35 * day, nextAction: "确认预算来源", nextActionDueAt: now + 2 * day, riskLevel: "high", lastFollowUpAt: now - 4 * day, createdAt: now - 35 * day, updatedAt: now - 4 * day },
-    { id: "o_lingyun_laptop", customerId: "c_lingyun", ownerId: "u_sales_lin", name: "笔记本采购", amountCents: 10_000_000, stage: "negotiation", probability: 60, expectedCloseDate: now + 10 * day, nextAction: "确认报价有效期", nextActionDueAt: now + 1 * day, riskLevel: "medium", lastFollowUpAt: now - 4 * day, createdAt: now - 18 * day, updatedAt: now - 4 * day },
-    { id: "o_boyuan_display", customerId: "c_boyuan", ownerId: "u_sales_lin", name: "显示器采购", amountCents: 8_000_000, stage: "quote", probability: 40, expectedCloseDate: now + 20 * day, nextAction: "确认数量与交付批次", nextActionDueAt: now + 4 * day, riskLevel: "medium", lastFollowUpAt: now - 6 * day, createdAt: now - 22 * day, updatedAt: now - 6 * day },
-    { id: "o_qingsong_edu", customerId: "c_qingsong", ownerId: "u_sales_lin", name: "教学设备采购", amountCents: 4_000_000, stage: "lead", probability: 10, expectedCloseDate: now + 60 * day, nextAction: "完成需求访谈", nextActionDueAt: now + 7 * day, riskLevel: "low", lastFollowUpAt: now - 10 * day, createdAt: now - 12 * day, updatedAt: now - 10 * day },
-    { id: "o_zhihang_server", customerId: "c_zhihang", ownerId: "u_sales_wang", name: "服务器采购", amountCents: 22_000_000, stage: "quote", probability: 55, expectedCloseDate: now + 18 * day, nextAction: "确认采购预算", nextActionDueAt: todayAt(17), riskLevel: "high", lastFollowUpAt: now - 6 * day, createdAt: now - 28 * day, updatedAt: now - 6 * day },
-    { id: "o_kaiyuan_network", customerId: "c_kaiyuan", ownerId: "u_sales_wang", name: "网络设备升级", amountCents: 9_000_000, stage: "negotiation", probability: 70, expectedCloseDate: now + 12 * day, nextAction: "发送合同草案", nextActionDueAt: now + 2 * day, riskLevel: "low", lastFollowUpAt: now - 1 * day, createdAt: now - 16 * day, updatedAt: now - 1 * day },
-    { id: "o_haitong_meeting", customerId: "c_haitong", ownerId: "u_sales_chen", name: "会议设备采购", amountCents: 18_000_000, stage: "solution", probability: 40, expectedCloseDate: now + 25 * day, nextAction: "安排产品演示", nextActionDueAt: now + 3 * day, riskLevel: "medium", lastFollowUpAt: now - 3 * day, createdAt: now - 24 * day, updatedAt: now - 3 * day },
-    { id: "o_yuantu_handheld", customerId: "c_yuantu", ownerId: "u_sales_chen", name: "手持终端采购", amountCents: 7_000_000, stage: "needs", probability: 20, expectedCloseDate: now + 45 * day, nextAction: "确认使用场景", nextActionDueAt: now + 6 * day, riskLevel: "low", lastFollowUpAt: now - 8 * day, createdAt: now - 14 * day, updatedAt: now - 8 * day },
+    { id: "o_huachen_server", customerId: "c_huachen", ownerId: "u_sales_lin", name: "服务器采购", amountCents: 28_000_000, stage: "quote", probability: 70, expectedCloseDate: at(20), nextAction: "联系采购确认预算审批与交付时间", nextActionDueAt: at(0), riskLevel: "high", lastFollowUpAt: now - 5 * day, createdAt: now - 30 * day, updatedAt: now - 5 * day },
+    { id: "o_huachen_storage", customerId: "c_huachen", ownerId: "u_sales_lin", name: "存储扩容", amountCents: 12_000_000, stage: "solution", probability: 50, expectedCloseDate: at(40), nextAction: "确认扩容容量与预算", nextActionDueAt: at(3), riskLevel: "medium", lastFollowUpAt: now - 12 * day, createdAt: now - 45 * day, updatedAt: now - 12 * day },
+    { id: "o_yuanshan_storage", customerId: "c_yuanshan", ownerId: "u_sales_lin", name: "存储扩容", amountCents: 12_000_000, stage: "negotiation", probability: 65, expectedCloseDate: at(15), nextAction: "发送最终报价", nextActionDueAt: at(0), riskLevel: "low", lastFollowUpAt: now - 2 * hour, createdAt: now - 25 * day, updatedAt: now - 2 * hour },
+    { id: "o_xinghe_maintenance", customerId: "c_xinghe", ownerId: "u_sales_lin", name: "年度维保", amountCents: 6_000_000, stage: "needs", probability: 30, expectedCloseDate: at(30), nextAction: "梳理设备清单", nextActionDueAt: at(5), riskLevel: "low", lastFollowUpAt: now - 3 * day, createdAt: now - 20 * day, updatedAt: now - 3 * day },
+    { id: "o_haichuan_workstation", customerId: "c_haichuan", ownerId: "u_sales_lin", name: "移动工作站采购", amountCents: 15_000_000, stage: "needs", probability: 25, expectedCloseDate: at(35), nextAction: "确认预算来源", nextActionDueAt: at(2), riskLevel: "high", lastFollowUpAt: now - 4 * day, createdAt: now - 35 * day, updatedAt: now - 4 * day },
+    { id: "o_lingyun_laptop", customerId: "c_lingyun", ownerId: "u_sales_lin", name: "笔记本采购", amountCents: 10_000_000, stage: "negotiation", probability: 60, expectedCloseDate: at(10), nextAction: "确认报价有效期", nextActionDueAt: at(1), riskLevel: "medium", lastFollowUpAt: now - 4 * day, createdAt: now - 18 * day, updatedAt: now - 4 * day },
+    { id: "o_boyuan_display", customerId: "c_boyuan", ownerId: "u_sales_lin", name: "显示器采购", amountCents: 8_000_000, stage: "quote", probability: 40, expectedCloseDate: at(20), nextAction: "确认数量与交付批次", nextActionDueAt: at(4), riskLevel: "medium", lastFollowUpAt: now - 6 * day, createdAt: now - 22 * day, updatedAt: now - 6 * day },
+    { id: "o_qingsong_edu", customerId: "c_qingsong", ownerId: "u_sales_lin", name: "教学设备采购", amountCents: 4_000_000, stage: "lead", probability: 10, expectedCloseDate: at(60), nextAction: "完成需求访谈", nextActionDueAt: at(7), riskLevel: "low", lastFollowUpAt: now - 10 * day, createdAt: now - 12 * day, updatedAt: now - 10 * day },
+    { id: "o_zhihang_server", customerId: "c_zhihang", ownerId: "u_sales_wang", name: "服务器采购", amountCents: 22_000_000, stage: "quote", probability: 55, expectedCloseDate: at(18), nextAction: "确认采购预算", nextActionDueAt: at(0), riskLevel: "high", lastFollowUpAt: now - 6 * day, createdAt: now - 28 * day, updatedAt: now - 6 * day },
+    { id: "o_kaiyuan_network", customerId: "c_kaiyuan", ownerId: "u_sales_wang", name: "网络设备升级", amountCents: 9_000_000, stage: "negotiation", probability: 70, expectedCloseDate: at(12), nextAction: "发送合同草案", nextActionDueAt: at(2), riskLevel: "low", lastFollowUpAt: now - 1 * day, createdAt: now - 16 * day, updatedAt: now - 1 * day },
+    { id: "o_haitong_meeting", customerId: "c_haitong", ownerId: "u_sales_chen", name: "会议设备采购", amountCents: 18_000_000, stage: "solution", probability: 40, expectedCloseDate: at(25), nextAction: "安排产品演示", nextActionDueAt: at(3), riskLevel: "medium", lastFollowUpAt: now - 3 * day, createdAt: now - 24 * day, updatedAt: now - 3 * day },
+    { id: "o_yuantu_handheld", customerId: "c_yuantu", ownerId: "u_sales_chen", name: "手持终端采购", amountCents: 7_000_000, stage: "needs", probability: 20, expectedCloseDate: at(45), nextAction: "确认使用场景", nextActionDueAt: at(6), riskLevel: "low", lastFollowUpAt: now - 8 * day, createdAt: now - 14 * day, updatedAt: now - 8 * day },
   ];
 }
 
 export function buildFollowUpSeeds(now: number): Array<typeof followUpsTable.$inferInsert> {
   const day = 86_400_000;
   const hour = 3_600_000;
+  const at = (dayOffset: number, hourOfDay = 17) => {
+    const date = new Date(now);
+    date.setDate(date.getDate() + dayOffset);
+    date.setHours(hourOfDay, 0, 0, 0);
+    return date.getTime();
+  };
   return [
-    { id: "f_huachen_1", customerId: "c_huachen", opportunityId: "o_huachen_server", actorId: "u_sales_lin", type: "call", content: "联系张总，客户询问交付周期", result: "客户希望下周五前交付", nextAction: "确认预算审批", nextActionDueAt: now + 2 * hour, createdAt: now - 5 * day },
+    { id: "f_huachen_1", customerId: "c_huachen", opportunityId: "o_huachen_server", actorId: "u_sales_lin", type: "call", content: "联系张总，客户询问交付周期", result: "客户希望下周五前交付", nextAction: "确认预算审批", nextActionDueAt: at(0), createdAt: now - 5 * day },
     { id: "f_huachen_2", customerId: "c_huachen", opportunityId: "o_huachen_server", actorId: "u_sales_lin", type: "email", content: "发送服务器采购方案", result: "客户已查看", nextAction: null, nextActionDueAt: null, createdAt: now - 7 * day },
-    { id: "f_yuanshan_1", customerId: "c_yuanshan", opportunityId: "o_yuanshan_storage", actorId: "u_sales_lin", type: "wechat", content: "客户回复需要最终报价", result: "客户刚回复，希望尽快给出最终价格", nextAction: "发送最终报价", nextActionDueAt: now + 2 * hour, createdAt: now - 2 * hour },
-    { id: "f_zhihang_1", customerId: "c_zhihang", opportunityId: "o_zhihang_server", actorId: "u_sales_wang", type: "call", content: "确认采购预算", result: "预算尚未批复", nextAction: "再次确认预算", nextActionDueAt: now + 4 * hour, createdAt: now - 6 * day },
-    { id: "f_lingyun_1", customerId: "c_lingyun", opportunityId: "o_lingyun_laptop", actorId: "u_sales_lin", type: "email", content: "跟进报价有效期", result: "客户要求延长 3 天", nextAction: "重新确认报价", nextActionDueAt: now + day, createdAt: now - 4 * day },
-    { id: "f_huachen_storage_1", customerId: "c_huachen", opportunityId: "o_huachen_storage", actorId: "u_sales_lin", type: "meeting", content: "讨论存储扩容容量", result: "待客户确认", nextAction: "确认容量清单", nextActionDueAt: now + 3 * day, createdAt: now - 12 * day },
+    { id: "f_yuanshan_1", customerId: "c_yuanshan", opportunityId: "o_yuanshan_storage", actorId: "u_sales_lin", type: "wechat", content: "客户回复需要最终报价", result: "客户刚回复，希望尽快给出最终价格", nextAction: "发送最终报价", nextActionDueAt: at(0), createdAt: now - 2 * hour },
+    { id: "f_zhihang_1", customerId: "c_zhihang", opportunityId: "o_zhihang_server", actorId: "u_sales_wang", type: "call", content: "确认采购预算", result: "预算尚未批复", nextAction: "再次确认预算", nextActionDueAt: at(0), createdAt: now - 6 * day },
+    { id: "f_lingyun_1", customerId: "c_lingyun", opportunityId: "o_lingyun_laptop", actorId: "u_sales_lin", type: "email", content: "跟进报价有效期", result: "客户要求延长 3 天", nextAction: "重新确认报价", nextActionDueAt: at(1), createdAt: now - 4 * day },
+    { id: "f_huachen_storage_1", customerId: "c_huachen", opportunityId: "o_huachen_storage", actorId: "u_sales_lin", type: "meeting", content: "讨论存储扩容容量", result: "待客户确认", nextAction: "确认容量清单", nextActionDueAt: at(3), createdAt: now - 12 * day },
   ];
 }

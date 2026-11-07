@@ -50,6 +50,18 @@ describe("proactive read tools", () => {
       expect(data.followUps.length).toBeGreaterThan(0);
     }
   });
+
+  it("emits structured action suggestions", async () => {
+    const c = ctx(sales);
+    const events: any[] = [];
+    const result = await executeTool(tool("suggest_actions"), { ...c, emit: (event: any) => events.push(event) }, {
+      actions: [{ label: "记录跟进", prompt: "记录跟进：已联系客户" }],
+    });
+    expect(result.model.ok).toBe(true);
+    const artifact = events.find((event) => event.type === "artifact");
+    expect(artifact.payload.kind).toBe("actions");
+    expect(artifact.payload.payload.actions[0].label).toBe("记录跟进");
+  });
 });
 
 describe("proactive write tools", () => {

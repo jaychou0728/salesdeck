@@ -12,7 +12,7 @@ Fastify 后端
   ├─ /api/chat                   SSE 业务对话（trace 事件 + artifact）
   ├─ Agent Runtime               LangGraph.js 显式状态图
   ├─ Trace 服务                  事件持久化 + 回放查询
-  ├─ Tool Registry               13 个工具：Zod 校验 / 角色权限 / 审计 / SSE 步骤
+  ├─ Tool Registry               14 个工具：Zod 校验 / 角色权限 / 审计 / SSE 步骤
   ├─ Workspace Service           优先级引擎、商机/跟进聚合、经理驾驶舱
   ├─ Business Services           定价、库存、信用、状态机、幂等、确认令牌、审批、晨报
   ├─ RAG                         切块 → n-gram 向量 → BM25+向量 RRF → 证据门槛 → 引用
@@ -29,7 +29,7 @@ Fastify 后端
 | Provider | `apps/server/src/agent` | `ChatProvider` 接口、DeepSeek、Mock、LangGraph 图、trace 记录 |
 | 数据库 | `apps/server/src/db` | Schema、迁移、seed 数据 |
 | 业务域 | `apps/server/src/domain` | 定价、库存分配、信用、状态机、权限、幂等、确认令牌、审批、订单 |
-| 工具 | `apps/server/src/tools` | 8 个读工具 + 5 个写工具、注册表与统一执行器 |
+| 工具 | `apps/server/src/tools` | 9 个读工具 + 5 个写工具、注册表与统一执行器 |
 | RAG | `apps/server/src/rag` | Markdown 切块、哈希向量、入库、混合检索 |
 | 网关 | `apps/server/src/gateway` | OpenAI 兼容路由、SSE 封装 |
 | 路由 | `apps/server/src/routes` | chat、确认、审批、晨报、业务面板、会话、trace、demo reset |
@@ -76,7 +76,7 @@ domain/workspace.ts（self / team 聚合：指标、优先级、待办、风险�
 
 AI 与前端共用同一套 `domain/workspace` 输出，避免“页面看到的优先级”和“AI 判断的优先级”不一致。
 
-## 4. 工具契约（13 个）
+## 4. 工具契约（14 个）
 
 统一返回信封：
 
@@ -103,6 +103,7 @@ type ToolResult<T> =
 | 11 | `get_opportunity_detail` | 读 | `opportunityId` | 商机 + 客户 + 关联报价/订单 + 跟进 + 风险信号 + 建议下一步 |
 | 12 | `log_follow_up` | 写 | `customerId, opportunityId?, type, content, result?, nextAction?, nextActionDueAt?, dryRun, ...` | dry-run 预览；提交写跟进并同步商机下一步与最近跟进时间 |
 | 13 | `update_opportunity_next_action` | 写 | `opportunityId, nextAction, nextActionDueAt?, dryRun, ...` | dry-run 预览；提交更新商机下一步 |
+| 14 | `suggest_actions` | 读 | `actions[{label, prompt}]` | 返回 `actions` artifact，前端渲染可点击选项；无业务副作用 |
 
 注册表统一执行流程（`tools/registry.ts`）：`step.start` → Zod 校验 → 角色校验 → 执行业务 → 写 `audit_logs` → `step.end` → 发送 `artifact`。参数与结果中的 `confirmationToken` / `idempotencyKey` / `token` 会脱敏后才进入审计与事件。
 
@@ -171,6 +172,6 @@ type ToolResult<T> =
 
 ## 11. 质量证据
 
-- Vitest：shared 14 个测试 + 服务端 117 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、13 个工具契约、优先级引擎、workspace 聚合、商机/跟进、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
+- Vitest：shared 14 个测试 + 服务端 117 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、优先级引擎、workspace 聚合、商机/跟进、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
 - Playwright：7 条端到端测试（含作战室、客户跟进、经理视图与 AI 推进）。
 - Agent 评测：30 条 golden cases，当前通过率 100%（见 `docs/EVAL_REPORT.md`）。

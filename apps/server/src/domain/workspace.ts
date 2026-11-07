@@ -205,7 +205,7 @@ function loadActiveRows(db: Db, ownerIds: string[]): OpportunityContextRow[] {
 
 function buildHeadline(priorities: PriorityItem[]) {
   if (priorities.length === 0) return "今天没有需要紧急推进的商机，可以整理客户资料或开发新线索。";
-  const top = priorities.slice(0, 3).map((item) => `${item.customerName}${item.name}`);
+  const top = priorities.slice(0, 3).map((item) => `${item.customerName} · ${item.name}`);
   return `今天有 ${priorities.length} 个客户值得优先推进：${top.join("、")}。`;
 }
 

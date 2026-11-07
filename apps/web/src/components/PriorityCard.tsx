@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { PriorityItem } from "@salespilot/shared";
 import { Link } from "react-router-dom";
 import { ArrowRight, Bot, ClipboardList, User } from "lucide-react";
@@ -15,8 +16,12 @@ export function PriorityCard({
   onAskAI: (item: PriorityItem) => void;
   onLogFollowUp: (item: PriorityItem) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const hiddenCount = Math.max(0, item.reasons.length - 3);
+  const reasons = expanded ? item.reasons : item.reasons.slice(0, 3);
+
   return (
-    <article data-testid="priority-card" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <article data-testid="priority-card" className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={priorityTone(item.priority)}>{priorityLabel(item.priority)}</Badge>
@@ -40,13 +45,22 @@ export function PriorityCard({
       </div>
 
       <ul className="mt-3 space-y-1 text-xs text-slate-600">
-        {item.reasons.map((reason) => (
+        {reasons.map((reason) => (
           <li key={reason} className="flex gap-1.5">
             <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-slate-400" />
             {reason}
           </li>
         ))}
       </ul>
+      {hiddenCount > 0 ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-1 self-start text-[11px] text-slate-400 hover:text-teal-700"
+        >
+          {expanded ? "收起" : `展开剩余 ${hiddenCount} 条`}
+        </button>
+      ) : null}
 
       <div className="mt-3 rounded-lg bg-teal-50 p-2.5 text-xs text-teal-900">
         <span className="font-medium">建议：</span>
@@ -62,24 +76,22 @@ export function PriorityCard({
         </div>
       ) : null}
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Link
-          to={`/customers/${item.customerId}`}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-        >
+      <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 pt-3">
+        <Link to={`/customers/${item.customerId}`} className="text-xs text-slate-500 hover:text-teal-700">
           查看客户
         </Link>
-        <Link
-          to={`/opportunities/${item.opportunityId}`}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-        >
+        <Link to={`/opportunities/${item.opportunityId}`} className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-teal-700">
           查看商机 <ArrowRight size={12} />
         </Link>
-        <Button size="sm" onClick={() => onAskAI(item)}>
-          <Bot size={13} /> 让 AI 帮我推进
-        </Button>
-        <Button size="sm" variant="secondary" onClick={() => onLogFollowUp(item)}>
+        <button
+          type="button"
+          onClick={() => onLogFollowUp(item)}
+          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-teal-700"
+        >
           <ClipboardList size={13} /> 记录跟进
+        </button>
+        <Button size="sm" onClick={() => onAskAI(item)} className="ml-auto">
+          <Bot size={13} /> 让 AI 帮我推进
         </Button>
       </div>
     </article>

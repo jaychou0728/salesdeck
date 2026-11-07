@@ -34,7 +34,7 @@ export function AuditDrawer() {
         if (event.target === event.currentTarget) closeAudit();
       }}
     >
-      <aside className="flex h-full w-[460px] max-w-full flex-col border-l border-slate-200 bg-white shadow-2xl" aria-label="审计抽屉">
+      <aside className="flex h-full w-[420px] max-w-full flex-col border-l border-slate-200 bg-white shadow-2xl" aria-label="审计抽屉">
         <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <div>
             <div className="text-sm font-semibold text-slate-900">执行详情</div>

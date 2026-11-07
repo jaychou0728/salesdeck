@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import type { TraceEvent } from "@salespilot/shared";
 import { Activity, X } from "lucide-react";
+import { cn } from "../lib/utils";
 import { useAppStore } from "../state/store";
 import { streamChat } from "../api/sse";
 import { MessageBubble } from "./MessageBubble";
 import { Composer } from "./Composer";
 import { ArtifactCard } from "./ArtifactCard";
 import { ApprovalCard } from "./ApprovalCard";
+import { TraceTimeline } from "./TraceTimeline";
 import { Button } from "./ui/Button";
 
 export function ChatStream() {
@@ -25,15 +27,16 @@ export function ChatStream() {
     updateLastAssistant,
     addTrace,
     addArtifact,
+    removeArtifact,
     setStreaming,
     setPendingApproval,
     setLastQuoteId,
     setChatContext,
     setConversation,
-    openAudit,
     bumpData,
   } = useAppStore();
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<"chat" | "execution">("chat");
 
   async function send(message: string) {
     setError(null);
@@ -103,26 +106,44 @@ export function ChatStream() {
   }
 
   const lastAssistant = [...messages].reverse().find((message) => message.role === "assistant")?.content ?? "";
+  const hasActionArtifact = artifacts.some((artifact) => artifact.kind === "actions");
   const needsConfirmation =
     !streaming &&
     !pendingApprovalId &&
     !lastQuoteId &&
+    !hasActionArtifact &&
     /请确认|确认后|是否|吗[？?]/.test(lastAssistant);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2">
-        <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">AI 助手</div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => openAudit({ events: trace })}
-          disabled={trace.length === 0}
-          title={trace.length === 0 ? "暂无执行记录" : "查看本次执行链路"}
-        >
-          <Activity size={13} />
-          查看执行详情
-        </Button>
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-2">
+        <div className="flex items-center gap-0.5 rounded-lg bg-slate-100 p-0.5" role="tablist" aria-label="AI 助手视图">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === "chat"}
+            onClick={() => setView("chat")}
+            className={cn(
+              "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+              view === "chat" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700",
+            )}
+          >
+            对话
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === "execution"}
+            onClick={() => setView("execution")}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+              view === "execution" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700",
+            )}
+          >
+            <Activity size={12} /> 执行过程
+          </button>
+        </div>
+        <span className="text-[10px] text-slate-400">{view === "execution" ? `${trace.length} 步` : "AI 助手"}</span>
       </div>
 
       {chatContext ? (
@@ -134,62 +155,80 @@ export function ChatStream() {
         </div>
       ) : null}
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4" data-testid="chat-messages">
-        {messages.length === 0 && !pendingApprovalId ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-xs leading-relaxed text-slate-500">
-            我是销售助手。可以帮你查客户、查库存、报价、转订单或创建售后工单。业务页面里的操作也可以用这里的对话完成。
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {["今天哪些客户最值得跟进", "帮我推进华辰设计", "记录一条跟进"].map((prompt) => (
+      {view === "execution" ? (
+        <div className="flex-1 overflow-y-auto p-4" data-testid="execution-view">
+          <div className="mb-3 text-[11px] text-slate-500">每一次工具调用、参数与结果都会留痕，可展开查看。</div>
+          <TraceTimeline events={trace} emptyText="本次对话还没有工具调用记录。" />
+        </div>
+      ) : (
+        <>
+          <div className="flex-1 space-y-4 overflow-y-auto p-4" data-testid="chat-messages">
+            {messages.length === 0 && !pendingApprovalId ? (
+              <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-xs leading-relaxed text-slate-500">
+                我是销售助手。可以帮你查客户、查库存、报价、转订单或创建售后工单。业务页面里的操作也可以用这里的对话完成。
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {["今天哪些客户最值得跟进", "帮我推进华辰设计", "记录一条跟进"].map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => void send(prompt)}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-600 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {messages.map((message, index) => (
+              <MessageBubble key={index} {...message} />
+            ))}
+            {artifacts.map((artifact, index) => (
+              <ArtifactCard
+                key={index}
+                artifact={artifact}
+                onCommitted={onCommitted}
+                onAction={(prompt) => {
+                  removeArtifact(index);
+                  setView("chat");
+                  void send(prompt);
+                }}
+              />
+            ))}
+            {pendingApprovalId ? <ApprovalCard approvalId={pendingApprovalId} /> : null}
+            {lastQuoteId ? (
+              <div className="flex justify-start">
+                <Button size="sm" onClick={() => send(`把报价 ${lastQuoteId} 转成订单`)} disabled={streaming}>
+                  转订单
+                </Button>
+              </div>
+            ) : null}
+            {needsConfirmation ? (
+              <div className="flex gap-2">
                 <button
-                  key={prompt}
                   type="button"
-                  onClick={() => void send(prompt)}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-600 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800"
+                  className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                  disabled={streaming}
+                  onClick={() => send("确认，继续")}
                 >
-                  {prompt}
+                  继续
                 </button>
-              ))}
-            </div>
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 disabled:opacity-50"
+                  disabled={streaming}
+                  onClick={() => send("先不用")}
+                >
+                  先不用
+                </button>
+              </div>
+            ) : null}
+            {streaming ? <div className="text-[11px] text-slate-400">正在处理…</div> : null}
+            {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{error}</div> : null}
           </div>
-        ) : null}
-        {messages.map((message, index) => (
-          <MessageBubble key={index} {...message} />
-        ))}
-        {artifacts.map((artifact, index) => (
-          <ArtifactCard key={index} artifact={artifact} onCommitted={onCommitted} />
-        ))}
-        {pendingApprovalId ? <ApprovalCard approvalId={pendingApprovalId} /> : null}
-        {lastQuoteId ? (
-          <div className="flex justify-start">
-            <Button size="sm" onClick={() => send(`把报价 ${lastQuoteId} 转成订单`)} disabled={streaming}>
-              转订单
-            </Button>
-          </div>
-        ) : null}
-        {needsConfirmation ? (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
-              disabled={streaming}
-              onClick={() => send("确认，继续")}
-            >
-              确认
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 disabled:opacity-50"
-              disabled={streaming}
-              onClick={() => send("取消")}
-            >
-              取消
-            </button>
-          </div>
-        ) : null}
-        {streaming ? <div className="text-[11px] text-slate-400">正在处理…</div> : null}
-        {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{error}</div> : null}
-      </div>
-      <Composer onSend={send} disabled={streaming} />
+          <Composer onSend={send} disabled={streaming} />
+        </>
+      )}
     </section>
   );
 }

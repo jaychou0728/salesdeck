@@ -142,6 +142,19 @@ export const GetOpportunityDetailInput = z.object({
 });
 export type GetOpportunityDetailInput = z.infer<typeof GetOpportunityDetailInput>;
 
+export const SuggestActionsInput = z.object({
+  actions: z
+    .array(
+      z.object({
+        label: z.string().min(1).max(40),
+        prompt: z.string().min(1).max(300),
+      }),
+    )
+    .min(1)
+    .max(4),
+});
+export type SuggestActionsInput = z.infer<typeof SuggestActionsInput>;
+
 export const LogFollowUpInput = z
   .object({
     customerId: z.string().min(1),

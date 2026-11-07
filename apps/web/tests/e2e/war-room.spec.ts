@@ -40,4 +40,8 @@ test("AI promotes a customer with tool calls", async ({ page }) => {
   await page.getByTestId("priority-card").first().getByRole("button", { name: "让 AI 帮我推进" }).click();
   await expect(page.getByTestId("ai-drawer")).toBeVisible();
   await expect(page.getByText("我先分析了这个商机", { exact: false })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: "拉取 360 + 库存" })).toBeVisible();
+
+  await page.getByRole("tab", { name: "执行过程" }).click();
+  await expect(page.getByText("get_opportunity_detail").first()).toBeVisible();
 });

@@ -63,6 +63,7 @@ export type ArtifactKind =
   | "briefing"
   | "follow_up"
   | "next_action"
+  | "actions"
   | "error";
 
 export interface Artifact {
@@ -153,4 +154,9 @@ export interface TodoItem {
   dueAt?: number;
   severity: "info" | "warning" | "blocker";
   href: string;
+}
+
+export interface ActionSuggestion {
+  label: string;
+  prompt: string;
 }

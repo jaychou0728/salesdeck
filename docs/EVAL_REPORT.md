@@ -37,7 +37,7 @@
 | E23 | idempotency | create_quote | intent, search_customers, check_inventory, get_pricing, create_quote | ✅ |
 | E24 | boundary | get_customer_360 | intent, get_customer_360 | ✅ |
 | E25 | after_sales | search_knowledge, create_after_sales_ticket | intent, search_knowledge, create_after_sales_ticket | ✅ |
-| E26 | proactive | get_opportunity_detail, check_inventory | intent, get_opportunity_detail, check_inventory | ✅ |
+| E26 | proactive | get_opportunity_detail, check_inventory, suggest_actions | intent, get_opportunity_detail, check_inventory, suggest_actions | ✅ |
 | E27 | proactive | get_sales_priorities | intent, get_sales_priorities | ✅ |
 | E28 | proactive | get_sales_priorities | intent, get_sales_priorities | ✅ |
 | E29 | proactive | log_follow_up | intent, log_follow_up | ✅ |
