@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "./seed.js";
+import { startOfMonthLocal } from "../lib/time.js";
 import {
   contacts,
   customers,
@@ -105,13 +106,21 @@ describe("seed", () => {
 
   it("seeds team sales for manager ranking", () => {
     const { db } = makeTestDb();
-    const now = Date.now();
+    const now = new Date("2026-11-02T10:00:00+08:00").getTime();
     seedDatabase(db, now);
-    const monthStart = new Date(now);
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-    const rows = db.select().from(orders).all().filter((order) => order.createdAt >= monthStart.getTime());
-    expect(rows.some((order) => order.ownerId === "u_sales_wang")).toBe(true);
-    expect(rows.some((order) => order.ownerId === "u_sales_chen")).toBe(true);
+    const monthStart = startOfMonthLocal(now);
+
+    const rows = db.select().from(orders).all().filter((order) => order.createdAt >= monthStart);
+    for (const ownerId of ["u_sales_lin", "u_sales_wang", "u_sales_chen"]) {
+      expect(rows.some((order) => order.ownerId === ownerId)).toBe(true);
+    }
+
+    const monthlyOrderIds = ["o_seed_lin_month", "o_seed_wang_month", "o_seed_chen_month"];
+    const monthlyOrders = db.select().from(orders).all().filter((order) => monthlyOrderIds.includes(order.id));
+    expect(monthlyOrders).toHaveLength(3);
+    for (const order of monthlyOrders) {
+      expect(order.createdAt).toBeGreaterThanOrEqual(monthStart);
+      expect(order.createdAt).toBeLessThanOrEqual(now);
+    }
   });
 });

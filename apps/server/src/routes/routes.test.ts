@@ -4,6 +4,7 @@ import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { buildApp } from "../app.js";
 import { MockProvider } from "../agent/mockProvider.js";
+import { followUps, opportunities } from "../db/schema.js";
 
 function setup() {
   const { db, sqlite } = makeTestDb();
@@ -46,6 +47,23 @@ describe("routes", () => {
     });
     expect(confirm.statusCode).toBe(200);
     expect(confirm.json().ok).toBe(true);
+  });
+
+  it("resets demo data twice when demo mode is enabled", async () => {
+    const { app, db } = setup();
+    const previousDemoMode = process.env.DEMO_MODE;
+    process.env.DEMO_MODE = "true";
+    try {
+      for (let run = 0; run < 2; run += 1) {
+        const response = await app.inject({ method: "POST", url: "/api/demo/reset" });
+        expect(response.statusCode).toBe(200);
+        expect(db.select().from(opportunities).all()).toHaveLength(12);
+        expect(db.select().from(followUps).all()).toHaveLength(6);
+      }
+    } finally {
+      if (previousDemoMode === undefined) delete process.env.DEMO_MODE;
+      else process.env.DEMO_MODE = previousDemoMode;
+    }
   });
 
   it("exposes openapi paths", async () => {

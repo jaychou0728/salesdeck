@@ -1,4 +1,5 @@
 import type { followUps as followUpsTable, opportunities as opportunitiesTable } from "./schema.js";
+import { startOfMonthLocal } from "../lib/time.js";
 
 const yuan = (value: number) => value * 100;
 
@@ -111,17 +112,17 @@ export function buildQuoteSeeds(now: number) {
 
 export function buildOrderSeeds(now: number) {
   const day = 86_400_000;
-  const monthStart = new Date(now);
-  monthStart.setDate(1);
-  monthStart.setHours(0, 0, 0, 0);
   // Keep the seeded monthly sales inside the current month so the manager
   // ranking stays meaningful wherever the demo is reset during the month.
-  const thisMonth = (timestamp: number) => Math.max(timestamp, monthStart.getTime());
+  // Month boundaries are local time; nudge the clamp a few hours past
+  // midnight so `gt`/`gte` or UTC/local mixes cannot drop the rows.
+  const clampToCurrentMonth = (now: number, timestamp: number) =>
+    Math.max(timestamp, startOfMonthLocal(now) + 3 * 3_600_000);
   return [
     { id: "o_seed_1", orderNo: "SO-2026-0001", quoteId: "q_seed_3", customerId: "c_xinghe", ownerId: "u_sales_lin", status: "reserved", totalCents: 1_072_935, paymentTerms: "月结 30 天", createdAt: now - 86400_000 },
-    { id: "o_seed_lin_month", orderNo: "SO-2026-0101", quoteId: "q_seed_lin_month", customerId: "c_hengtai", ownerId: "u_sales_lin", status: "reserved", totalCents: 66_099_915, paymentTerms: "月结 60 天", createdAt: thisMonth(now - 4 * day) },
-    { id: "o_seed_wang_month", orderNo: "SO-2026-0102", quoteId: "q_seed_wang_month", customerId: "c_zhongke", ownerId: "u_sales_wang", status: "reserved", totalCents: 40_675_480, paymentTerms: "月结 45 天", createdAt: thisMonth(now - 6 * day) },
-    { id: "o_seed_chen_month", orderNo: "SO-2026-0103", quoteId: "q_seed_chen_month", customerId: "c_huayun", ownerId: "u_sales_chen", status: "reserved", totalCents: 27_448_830, paymentTerms: "月结 60 天", createdAt: thisMonth(now - 8 * day) },
+    { id: "o_seed_lin_month", orderNo: "SO-2026-0101", quoteId: "q_seed_lin_month", customerId: "c_hengtai", ownerId: "u_sales_lin", status: "reserved", totalCents: 66_099_915, paymentTerms: "月结 60 天", createdAt: clampToCurrentMonth(now, now - 4 * day) },
+    { id: "o_seed_wang_month", orderNo: "SO-2026-0102", quoteId: "q_seed_wang_month", customerId: "c_zhongke", ownerId: "u_sales_wang", status: "reserved", totalCents: 40_675_480, paymentTerms: "月结 45 天", createdAt: clampToCurrentMonth(now, now - 6 * day) },
+    { id: "o_seed_chen_month", orderNo: "SO-2026-0103", quoteId: "q_seed_chen_month", customerId: "c_huayun", ownerId: "u_sales_chen", status: "reserved", totalCents: 27_448_830, paymentTerms: "月结 60 天", createdAt: clampToCurrentMonth(now, now - 8 * day) },
   ];
 }
 
