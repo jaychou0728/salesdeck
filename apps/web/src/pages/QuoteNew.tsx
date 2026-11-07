@@ -35,6 +35,7 @@ export function QuoteNew() {
   const { bumpData, pushToast } = useAppStore();
 
   const initialCustomerId = searchParams.get("customerId") ?? "";
+  const opportunityId = searchParams.get("opportunityId") ?? undefined;
   const [customerId, setCustomerId] = useState(initialCustomerId);
   const [contactId, setContactId] = useState("");
   const [lines, setLines] = useState<LineDraft[]>([newLine()]);
@@ -113,6 +114,7 @@ export function QuoteNew() {
       const result = await apiPost<QuotePreviewResponse>("/api/business/quotes/preview", {
         customerId,
         contactId,
+        opportunityId,
         lines: lines.map((line) => ({ sku: line.sku, quantity: Number(line.quantity) })),
         notes: notes.trim() || undefined,
       });

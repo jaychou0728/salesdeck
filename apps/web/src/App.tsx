@@ -3,6 +3,8 @@ import { AppShell } from "./components/AppShell";
 import { Dashboard } from "./pages/Dashboard";
 import { Customers } from "./pages/Customers";
 import { CustomerDetail } from "./pages/CustomerDetail";
+import { Opportunities } from "./pages/Opportunities";
+import { OpportunityDetail } from "./pages/OpportunityDetail";
 import { Inventory } from "./pages/Inventory";
 import { Quotes } from "./pages/Quotes";
 import { QuoteNew } from "./pages/QuoteNew";
@@ -22,6 +24,8 @@ export function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/customers/:id" element={<CustomerDetail />} />
+        <Route path="/opportunities" element={<Opportunities />} />
+        <Route path="/opportunities/:id" element={<OpportunityDetail />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/quotes" element={<Quotes />} />
         <Route path="/quotes/new" element={<QuoteNew />} />
