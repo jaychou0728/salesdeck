@@ -2,6 +2,7 @@ import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 import type { Citation, TraceEvent } from "@salespilot/shared";
 import type { ChatMessage, ChatProvider } from "./provider.js";
 import { SYSTEM_PROMPT } from "./prompts.js";
+import { sanitizeAssistantText } from "./sanitize.js";
 import type { ToolContext, ToolDefinition } from "../tools/types.js";
 import { executeTool, toolSpecs } from "../tools/registry.js";
 
@@ -154,6 +155,7 @@ export function buildAgentGraph(input: {
       } else {
         content = last?.content && last.content.trim().length > 0 ? last.content : "信息不足，请补充客户、SKU 和数量。";
       }
+      content = sanitizeAssistantText(content);
       ctx.emit({ type: "token", payload: { delta: content } } as TraceEvent);
       return { finalText: content };
     })

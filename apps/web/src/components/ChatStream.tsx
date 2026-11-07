@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TraceEvent } from "@salespilot/shared";
 import { Activity, X } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -33,13 +33,16 @@ export function ChatStream() {
     setLastQuoteId,
     setChatContext,
     setConversation,
+    clearTransient,
     bumpData,
   } = useAppStore();
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"chat" | "execution">("chat");
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   async function send(message: string) {
     setError(null);
+    clearTransient();
     addMessage({ role: "user", content: message });
     setStreaming(true);
     let assistantText = "";
@@ -81,6 +84,13 @@ export function ChatStream() {
     if (prompt) void send(prompt);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingPrompt]);
+
+  // Keep the newest message in view as the user sends and the assistant streams.
+  useEffect(() => {
+    if (view !== "chat") return;
+    const element = scrollRef.current;
+    if (element) element.scrollTop = element.scrollHeight;
+  }, [messages, artifacts, streaming, pendingApprovalId, view]);
 
   function onCommitted(result: any) {
     const status = result?.data?.status;
@@ -162,7 +172,7 @@ export function ChatStream() {
         </div>
       ) : (
         <>
-          <div className="flex-1 space-y-4 overflow-y-auto p-4" data-testid="chat-messages">
+          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4" data-testid="chat-messages">
             {messages.length === 0 && !pendingApprovalId ? (
               <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-xs leading-relaxed text-slate-500">
                 我是销售助手。可以帮你查客户、查库存、报价、转订单或创建售后工单。业务页面里的操作也可以用这里的对话完成。

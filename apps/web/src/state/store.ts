@@ -39,6 +39,7 @@ interface AppState {
   setStreaming: (value: boolean) => void;
   setPendingApproval: (id?: string) => void;
   setLastQuoteId: (id?: string) => void;
+  clearTransient: () => void;
   resetChat: () => void;
   openAi: (context?: string) => void;
   closeAi: () => void;
@@ -83,6 +84,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   setStreaming: (streaming) => set({ streaming }),
   setPendingApproval: (pendingApprovalId) => set({ pendingApprovalId }),
   setLastQuoteId: (lastQuoteId) => set({ lastQuoteId }),
+  // Start each chat turn from a clean slate so the previous turn's quote preview
+  // or action buttons cannot appear to answer the new question.
+  clearTransient: () => set({ artifacts: [], lastQuoteId: undefined, trace: [] }),
 
   // Role switches clear the conversation but keep a pending approval card so the
   // manager can still act on the request that was just raised.
