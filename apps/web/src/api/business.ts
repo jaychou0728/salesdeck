@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Artifact, CustomerLevel, Role, TraceEvent } from "@salespilot/shared";
+import type {
+  Artifact,
+  CustomerLevel,
+  FollowUpType,
+  OpportunitySignals,
+  OpportunityStage,
+  PriorityItem,
+  RiskLevel,
+  Role,
+  TodoItem,
+  TraceEvent,
+} from "@salespilot/shared";
 import { useAppStore } from "../state/store";
 
 export interface ApiErrorBody {
@@ -22,7 +33,7 @@ export class ApiError extends Error {
   }
 }
 
-async function apiRequest<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+async function apiRequest<T>(method: "GET" | "POST" | "PATCH", path: string, body?: unknown): Promise<T> {
   const actorId = useAppStore.getState().actorId;
   const headers: Record<string, string> = { "x-actor-id": actorId };
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -58,6 +69,10 @@ export function apiGet<T>(path: string): Promise<T> {
 
 export function apiPost<T>(path: string, body: unknown = {}): Promise<T> {
   return apiRequest<T>("POST", path, body);
+}
+
+export function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  return apiRequest<T>("PATCH", path, body);
 }
 
 export function errorMessage(error: unknown): string {
@@ -302,6 +317,50 @@ export interface CustomersResponse {
   customers: CustomerRow[];
 }
 
+export interface OpportunityRow {
+  id: string;
+  customerId: string;
+  customerName: string;
+  ownerId: string;
+  ownerName: string | null;
+  name: string;
+  amountCents: number;
+  stage: OpportunityStage;
+  probability: number;
+  expectedCloseDate: number;
+  nextAction: string | null;
+  nextActionDueAt: number | null;
+  riskLevel: RiskLevel;
+  lastFollowUpAt: number | null;
+  createdAt: number;
+  updatedAt: number;
+  priority: "P0" | "P1" | "P2" | null;
+  score: number | null;
+  reasons: string[];
+  suggestedAction: string | null;
+}
+
+export interface FollowUpRow {
+  id: string;
+  customerId: string;
+  opportunityId: string | null;
+  actorId: string;
+  type: FollowUpType;
+  content: string;
+  result: string | null;
+  nextAction: string | null;
+  nextActionDueAt: number | null;
+  createdAt: number;
+}
+
+export interface CustomerAssessment {
+  summary: string;
+  positiveSignals: string[];
+  risks: string[];
+  suggestion: string;
+  nextAction: string | null;
+}
+
 export interface CustomerDetailResponse {
   customer: CustomerRow;
   contacts: ContactRow[];
@@ -309,6 +368,85 @@ export interface CustomerDetailResponse {
   quotes: QuoteRow[];
   orders: OrderRow[];
   tickets: TicketRow[];
+  opportunities: OpportunityRow[];
+  followUps: FollowUpRow[];
+  assessment: CustomerAssessment;
+}
+
+export interface WorkspaceMetrics {
+  monthSalesCents: number;
+  monthTargetCents: number;
+  completionRate: number;
+  expectedCloseCents: number;
+  activeOpportunities: number;
+  highRiskOpportunities: number;
+  pendingApprovals: number;
+  todayFollowUps: number;
+  overdueFollowUps: number;
+}
+
+export interface SalesRankingRow {
+  ownerId: string;
+  ownerName: string;
+  monthSalesCents: number;
+  pipelineCents: number;
+  targetCents: number;
+  completionRate: number;
+  trend: "up" | "flat" | "down";
+}
+
+export interface WorkspaceResponse {
+  ok: true;
+  scope: "self" | "team";
+  actor: ActorProfile;
+  metrics: WorkspaceMetrics;
+  headline: string;
+  priorities: PriorityItem[];
+  todos: {
+    today: TodoItem[];
+    overdue: TodoItem[];
+    approvals: TodoItem[];
+    quotesToAdvance: TodoItem[];
+    quotesExpiring: TodoItem[];
+    tickets: TodoItem[];
+    orders: TodoItem[];
+  };
+  risks: PriorityItem[];
+  ranking?: SalesRankingRow[];
+  recentQuotes: QuoteRow[];
+  recentOrders: OrderRow[];
+  alerts: AlertRow[];
+}
+
+export interface OpportunitiesResponse {
+  ok: true;
+  opportunities: OpportunityRow[];
+}
+
+export interface OpportunityDetailResponse {
+  ok: true;
+  opportunity: {
+    id: string;
+    customerId: string;
+    ownerId: string;
+    name: string;
+    amountCents: number;
+    stage: OpportunityStage;
+    probability: number;
+    expectedCloseDate: number;
+    nextAction: string | null;
+    nextActionDueAt: number | null;
+    riskLevel: RiskLevel;
+    lastFollowUpAt: number | null;
+    createdAt: number;
+    updatedAt: number;
+  };
+  customer: CustomerRow;
+  quotes: QuoteRow[];
+  orders: OrderRow[];
+  followUps: FollowUpRow[];
+  priority: PriorityItem;
+  assessment: CustomerAssessment;
 }
 
 export interface InventoryResponse {
@@ -502,4 +640,4 @@ export interface AuditResponse {
 /** Shape accepted by TraceTimeline: live SSE events or DB trace events. */
 export type TraceEventLike = TraceEvent | TraceEventRow;
 
-export type { Artifact };
+export type { Artifact, FollowUpType, OpportunitySignals, OpportunityStage, PriorityItem, RiskLevel, TodoItem };
