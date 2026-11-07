@@ -76,7 +76,7 @@ const failed = results.filter((result) => !result.ok);
 
 const report = `# Eval Report
 
-> 生成方式：\`pnpm eval\`，使用真实工具注册表 + LangGraph 状态图 + 确定性 MockProvider 跑通 25 条 golden cases。
+> 生成方式：\`pnpm eval\`，使用真实工具注册表 + LangGraph 状态图 + 确定性 MockProvider 跑通 ${cases.length} 条 golden cases。
 > 每条用例都使用独立的内存 SQLite，重新执行迁移、seed 与知识库入库。
 
 - Total: ${cases.length}
