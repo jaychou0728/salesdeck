@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { allTools, executeTool } from "./index.js";
-import { approvals, customers, orders, priceRules } from "../db/schema.js";
+import { approvals, customers, opportunities, orders, priceRules, quotes } from "../db/schema.js";
 import { decideApproval } from "../domain/approvals.js";
 import type { Actor } from "@salespilot/shared";
 
@@ -119,5 +119,45 @@ describe("write tools", () => {
     const result = await executeTool(tool("get_sales_briefing"), managerCtx, { scope: "team" });
     expect(result.model.ok).toBe(true);
     if (result.model.ok) expect((result.model.data as any).alerts.length).toBeGreaterThan(0);
+  });
+
+  it("links a created quote and order to an opportunity", async () => {
+    const { ctx, events, db } = setup();
+    const preview = await executeTool(tool("create_quote"), ctx, {
+      customerId: "c_huachen",
+      contactId: "ct_zhang_1",
+      opportunityId: "o_huachen_server",
+      lines: [{ sku: "SRV", quantity: 2 }],
+      dryRun: true,
+    });
+    expect(preview.model.ok).toBe(true);
+    const token = events.find((event) => event.type === "artifact").payload.confirmationToken;
+    const committed = await executeTool(tool("create_quote"), ctx, {
+      customerId: "c_huachen",
+      contactId: "ct_zhang_1",
+      opportunityId: "o_huachen_server",
+      lines: [{ sku: "SRV", quantity: 2 }],
+      dryRun: false,
+      confirmationToken: token,
+      idempotencyKey: "idem-opportunity-quote",
+    });
+    expect(committed.model.ok).toBe(true);
+    const quote = db.select().from(quotes).where(eq(quotes.id, (committed.model as any).data.quote.id)).get();
+    expect(quote?.opportunityId).toBe("o_huachen_server");
+
+    const orderPreview = await executeTool(tool("convert_quote_to_order"), ctx, { quoteId: quote!.id, dryRun: true });
+    expect(orderPreview.model.ok).toBe(true);
+    const orderToken = events.filter((event) => event.type === "artifact").at(-1).payload.confirmationToken;
+    const orderCommitted = await executeTool(tool("convert_quote_to_order"), ctx, {
+      quoteId: quote!.id,
+      dryRun: false,
+      confirmationToken: orderToken,
+      idempotencyKey: "idem-opportunity-order",
+    });
+    expect(orderCommitted.model.ok).toBe(true);
+    const order = db.select().from(orders).where(eq(orders.quoteId, quote!.id)).get();
+    expect(order?.opportunityId).toBe("o_huachen_server");
+    const opportunity = db.select().from(opportunities).where(eq(opportunities.id, "o_huachen_server")).get();
+    expect(opportunity?.stage).toBe("won");
   });
 });

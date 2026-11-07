@@ -11,6 +11,7 @@ import {
   auditLogs,
   contacts,
   customers,
+  followUps,
   inventory,
   orderLines,
   orders,
@@ -26,6 +27,7 @@ import {
 import { customerScope, resolveActor, scopedOwnerIds } from "../lib/actor.js";
 import { executeTool, toolMap } from "../tools/index.js";
 import { assertManager } from "../domain/permissions.js";
+import { buildCustomerAssessment, listOpportunityViews } from "../domain/workspace.js";
 
 const ERROR_STATUS: Record<string, number> = {
   VALIDATION_ERROR: 400,
@@ -59,6 +61,7 @@ const INVENTORY_TRANSFER = z.object({
 const QUOTE_PREVIEW = z.object({
   customerId: z.string().min(1),
   contactId: z.string().min(1),
+  opportunityId: z.string().min(1).optional(),
   lines: z
     .array(z.object({ sku: z.string().min(1), quantity: z.number().int().positive() }))
     .min(1)
@@ -356,6 +359,15 @@ export function registerBusiness(app: FastifyInstance, deps: { db: Db; sqlite: D
           quotes: quoteRows,
           orders: orderRows,
           tickets: ticketRows,
+          opportunities: listOpportunityViews(deps.db, actor, { customerId: id }),
+          followUps: deps.db
+            .select()
+            .from(followUps)
+            .where(eq(followUps.customerId, id))
+            .orderBy(desc(followUps.createdAt))
+            .limit(20)
+            .all(),
+          assessment: buildCustomerAssessment(deps.db, actor, id),
         };
       }),
     );
@@ -708,6 +720,7 @@ export function registerBusiness(app: FastifyInstance, deps: { db: Db; sqlite: D
         const outcome = await executeTool(toolMap.get("create_quote")!, toolContext(actor, `manual_quote_${randomUUID()}`), {
           customerId: input.customerId,
           contactId: input.contactId,
+          opportunityId: input.opportunityId,
           lines: input.lines,
           validDays: input.validDays ?? 7,
           notes: input.notes,

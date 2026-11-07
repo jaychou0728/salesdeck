@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { AppError } from "@salespilot/shared";
 import type { ToolContext } from "../tools/types.js";
-import { customers, inventory, orderLines, orders, quoteLines, quotes, stockReservations, warehouses } from "../db/schema.js";
+import { customers, inventory, opportunities, orderLines, orders, quoteLines, quotes, stockReservations, warehouses } from "../db/schema.js";
 import { checkCredit } from "./credit.js";
 import { planAllocation, reserveWithVersion } from "./inventory.js";
 
@@ -49,6 +49,7 @@ export function createOrderFromQuote(
       id: orderId,
       orderNo: `SO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
       quoteId: quote.id,
+      opportunityId: quote.opportunityId,
       customerId: quote.customerId,
       ownerId: quote.ownerId,
       status: "reserved",
@@ -71,6 +72,19 @@ export function createOrderFromQuote(
     }
     ctx.db.update(customers).set({ creditUsedCents: customer.creditUsedCents + quote.totalCents }).where(eq(customers.id, customer.id)).run();
     ctx.db.update(quotes).set({ status: "converted" }).where(eq(quotes.id, quote.id)).run();
+    if (quote.opportunityId) {
+      ctx.db
+        .update(opportunities)
+        .set({
+          stage: "won",
+          probability: 100,
+          nextAction: null,
+          nextActionDueAt: null,
+          updatedAt: Date.now(),
+        })
+        .where(eq(opportunities.id, quote.opportunityId))
+        .run();
+    }
     return { id: orderId, status: "reserved", totalCents: quote.totalCents };
   })();
 }

@@ -407,4 +407,14 @@ describe("business workspace", () => {
     const managerTraces = await app.inject({ method: "GET", url: "/api/business/traces", headers: as("u_manager_wang") });
     expect(managerTraces.json().traces.some((row: { id: string }) => row.id === traceRows[0].id)).toBe(true);
   });
+
+  it("returns opportunities, follow-ups and assessment in customer detail", async () => {
+    const { app } = setup();
+    const response = await app.inject({ method: "GET", url: "/api/business/customers/c_huachen", headers: as("u_sales_lin") });
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.opportunities.some((row: { id: string }) => row.id === "o_huachen_server")).toBe(true);
+    expect(body.followUps.length).toBeGreaterThan(0);
+    expect(body.assessment.suggestion).toBeTruthy();
+  });
 });

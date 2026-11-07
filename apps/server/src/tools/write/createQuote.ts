@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { CreateQuoteInput, fail, ok } from "@salespilot/shared";
-import { contacts, customers, priceRules, products, quoteLines, quotes } from "../../db/schema.js";
+import { contacts, customers, opportunities, priceRules, products, quoteLines, quotes } from "../../db/schema.js";
 import { createApproval } from "../../domain/approvals.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { withIdempotency } from "../../domain/idempotency.js";
@@ -12,6 +12,7 @@ import type { ToolDefinition } from "../types.js";
 const businessPayload = (input: CreateQuoteInput) => ({
   customerId: input.customerId,
   contactId: input.contactId,
+  opportunityId: input.opportunityId,
   lines: input.lines,
   validDays: input.validDays,
   notes: input.notes,
@@ -29,6 +30,12 @@ export const createQuote: ToolDefinition<CreateQuoteInput, unknown> = {
     assertCustomerAccess(ctx.actor, customer);
     const contact = ctx.db.select().from(contacts).where(eq(contacts.id, input.contactId)).get();
     if (!contact || contact.customerId !== customer.id) return { model: fail("NOT_FOUND", "联系人不存在或不属于该客户") };
+    if (input.opportunityId) {
+      const opportunity = ctx.db.select().from(opportunities).where(eq(opportunities.id, input.opportunityId)).get();
+      if (!opportunity || opportunity.customerId !== customer.id) {
+        return { model: fail("NOT_FOUND", "商机不存在或不属于该客户") };
+      }
+    }
 
     const productRows = ctx.db.select().from(products).all();
     const missing = input.lines.find((line) => !productRows.some((product) => product.sku === line.sku));
@@ -67,6 +74,7 @@ export const createQuote: ToolDefinition<CreateQuoteInput, unknown> = {
         quoteNo: `Q-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
         customerId: customer.id,
         contactId: contact.id,
+        opportunityId: input.opportunityId ?? null,
         ownerId: customer.ownerId,
         status,
         subtotalCents: totals.subtotalCents,
@@ -100,6 +108,13 @@ export const createQuote: ToolDefinition<CreateQuoteInput, unknown> = {
           reason: "报价低于价格底线，需要经理审批",
           payload: { quoteId },
         });
+      }
+      if (input.opportunityId) {
+        ctx.db
+          .update(opportunities)
+          .set({ stage: "quote", updatedAt: now })
+          .where(eq(opportunities.id, input.opportunityId))
+          .run();
       }
       return { quote: { id: quoteId, status, ...preview }, approvalId };
     });
