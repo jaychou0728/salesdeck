@@ -1,7 +1,9 @@
 import path from "node:path";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { FOLLOW_UP_TYPES, OPPORTUNITY_STAGES, RISK_LEVELS } from "@salespilot/shared";
 import { describe, expect, it } from "vitest";
 import { makeTestDb } from "../test/helpers.js";
+import { followUps, opportunities } from "./schema.js";
 
 type TableInfoRow = {
   cid: number;
@@ -30,6 +32,12 @@ function columnInfo(sqlite: Sqlite, table: string, column: string): TableInfoRow
   const match = tableInfo(sqlite, table).find((row) => row.name === column);
   expect(match, `expected column ${table}.${column} to exist`).toBeDefined();
   return match as TableInfoRow;
+}
+
+function indexColumns(sqlite: Sqlite, index: string): string[] {
+  return (sqlite.prepare(`pragma index_info('${index}')`).all() as Array<{ name: string }>).map(
+    (row) => row.name,
+  );
 }
 
 describe("database schema", () => {
@@ -96,9 +104,29 @@ describe("database schema", () => {
     const { sqlite } = makeTestDb();
     expect(columnInfo(sqlite, "quotes", "opportunity_id")).toBeDefined();
     expect(columnInfo(sqlite, "orders", "opportunity_id")).toBeDefined();
+    expect(columnInfo(sqlite, "users", "monthly_target_cents").notnull).toBe(1);
+    expect(columnInfo(sqlite, "quotes", "opportunity_id").notnull).toBe(0);
+    expect(columnInfo(sqlite, "orders", "opportunity_id").notnull).toBe(0);
     expect(columnInfo(sqlite, "users", "monthly_target_cents").dflt_value).toBe("0");
     expect(columnInfo(sqlite, "opportunities", "stage").notnull).toBe(1);
+    expect(columnInfo(sqlite, "opportunities", "probability").dflt_value).toBe("0");
+    expect(columnInfo(sqlite, "opportunities", "risk_level").dflt_value).toBe("'low'");
     expect(columnInfo(sqlite, "follow_ups", "type").notnull).toBe(1);
+
+    expect(indexColumns(sqlite, "opportunities_owner_stage_idx")).toEqual(["owner_id", "stage"]);
+    expect(indexColumns(sqlite, "opportunities_customer_idx")).toEqual(["customer_id"]);
+    expect(indexColumns(sqlite, "opportunities_due_idx")).toEqual(["next_action_due_at"]);
+    expect(indexColumns(sqlite, "follow_ups_customer_idx")).toEqual(["customer_id", "created_at"]);
+    expect(indexColumns(sqlite, "follow_ups_opportunity_idx")).toEqual([
+      "opportunity_id",
+      "created_at",
+    ]);
+  });
+
+  it("keeps drizzle enums in sync with shared contracts", () => {
+    expect(opportunities.stage.enumValues).toEqual([...OPPORTUNITY_STAGES]);
+    expect(opportunities.riskLevel.enumValues).toEqual([...RISK_LEVELS]);
+    expect(followUps.type.enumValues).toEqual([...FOLLOW_UP_TYPES]);
   });
 
   it("applies the migration idempotently", () => {
