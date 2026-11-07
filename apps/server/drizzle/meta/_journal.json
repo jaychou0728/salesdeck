@@ -8,6 +8,13 @@
       "when": 1793704296569,
       "tag": "0000_loud_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794065128777,
+      "tag": "0001_clumsy_gargoyle",
+      "breakpoints": true
     }
   ]
 }

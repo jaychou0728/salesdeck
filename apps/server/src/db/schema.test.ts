@@ -54,6 +54,8 @@ describe("database schema", () => {
       "stock_reservations",
       "approvals",
       "after_sales_tickets",
+      "opportunities",
+      "follow_ups",
       "conversations",
       "messages",
       "traces",
@@ -88,6 +90,15 @@ describe("database schema", () => {
 
     expect(columnInfo(sqlite, "customers", "credit_used_cents").dflt_value).toBe("0");
     expect(columnInfo(sqlite, "products", "tax_rate_bps").dflt_value).toBe("1300");
+  });
+
+  it("adds opportunity linkage and monthly targets", () => {
+    const { sqlite } = makeTestDb();
+    expect(columnInfo(sqlite, "quotes", "opportunity_id")).toBeDefined();
+    expect(columnInfo(sqlite, "orders", "opportunity_id")).toBeDefined();
+    expect(columnInfo(sqlite, "users", "monthly_target_cents").dflt_value).toBe("0");
+    expect(columnInfo(sqlite, "opportunities", "stage").notnull).toBe(1);
+    expect(columnInfo(sqlite, "follow_ups", "type").notnull).toBe(1);
   });
 
   it("applies the migration idempotently", () => {

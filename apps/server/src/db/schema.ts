@@ -1,10 +1,36 @@
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import type { FollowUpType, OpportunityStage, RiskLevel } from "@salespilot/shared";
+
+// drizzle-kit loads this file through a CJS loader that cannot require the ESM-only
+// @salespilot/shared package, so the values are repeated here. The type annotations
+// below make TypeScript reject any value that is not part of the shared unions; keep
+// them in sync with OPPORTUNITY_STAGES / RISK_LEVELS / FOLLOW_UP_TYPES in shared.
+const OPPORTUNITY_STAGE_VALUES: [OpportunityStage, ...OpportunityStage[]] = [
+  "lead",
+  "needs",
+  "solution",
+  "quote",
+  "negotiation",
+  "won",
+  "lost",
+];
+const RISK_LEVEL_VALUES: [RiskLevel, ...RiskLevel[]] = ["low", "medium", "high"];
+const FOLLOW_UP_TYPE_VALUES: [FollowUpType, ...FollowUpType[]] = [
+  "call",
+  "wechat",
+  "email",
+  "meeting",
+  "quote",
+  "system",
+  "ai_suggestion",
+];
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   role: text("role", { enum: ["sales", "manager"] }).notNull(),
   teamId: text("team_id").notNull(),
+  monthlyTargetCents: integer("monthly_target_cents").notNull().default(0),
 });
 
 export const customers = sqliteTable("customers", {
@@ -98,6 +124,7 @@ export const quotes = sqliteTable(
     validUntil: integer("valid_until").notNull(),
     riskFlags: text("risk_flags").notNull().default("[]"),
     notes: text("notes"),
+    opportunityId: text("opportunity_id"),
     createdAt: integer("created_at").notNull(),
   },
   (t) => ({ noIdx: uniqueIndex("quotes_no_idx").on(t.quoteNo) }),
@@ -125,6 +152,7 @@ export const orders = sqliteTable(
     status: text("status").notNull(),
     totalCents: integer("total_cents").notNull(),
     paymentTerms: text("payment_terms").notNull(),
+    opportunityId: text("opportunity_id"),
     createdAt: integer("created_at").notNull(),
   },
   (t) => ({ noIdx: uniqueIndex("orders_no_idx").on(t.orderNo) }),
@@ -279,4 +307,49 @@ export const knowledgeChunks = sqliteTable(
     createdAt: integer("created_at").notNull(),
   },
   (t) => ({ docIdx: index("knowledge_chunks_doc_idx").on(t.docId) }),
+);
+
+export const opportunities = sqliteTable(
+  "opportunities",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull(),
+    ownerId: text("owner_id").notNull(),
+    name: text("name").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    stage: text("stage", { enum: OPPORTUNITY_STAGE_VALUES }).notNull(),
+    probability: integer("probability").notNull().default(0),
+    expectedCloseDate: integer("expected_close_date").notNull(),
+    nextAction: text("next_action"),
+    nextActionDueAt: integer("next_action_due_at"),
+    riskLevel: text("risk_level", { enum: RISK_LEVEL_VALUES }).notNull().default("low"),
+    lastFollowUpAt: integer("last_follow_up_at"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (t) => ({
+    customerIdx: index("opportunities_customer_idx").on(t.customerId),
+    ownerStageIdx: index("opportunities_owner_stage_idx").on(t.ownerId, t.stage),
+    dueIdx: index("opportunities_due_idx").on(t.nextActionDueAt),
+  }),
+);
+
+export const followUps = sqliteTable(
+  "follow_ups",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull(),
+    opportunityId: text("opportunity_id"),
+    actorId: text("actor_id").notNull(),
+    type: text("type", { enum: FOLLOW_UP_TYPE_VALUES }).notNull(),
+    content: text("content").notNull(),
+    result: text("result"),
+    nextAction: text("next_action"),
+    nextActionDueAt: integer("next_action_due_at"),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => ({
+    customerIdx: index("follow_ups_customer_idx").on(t.customerId, t.createdAt),
+    opportunityIdx: index("follow_ups_opportunity_idx").on(t.opportunityId, t.createdAt),
+  }),
 );
