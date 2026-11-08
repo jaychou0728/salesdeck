@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CheckSquare, FileText, ShoppingCart } from "lucide-react";
+import { ArrowLeft, CheckSquare, ClipboardList, FileText, ShoppingCart } from "lucide-react";
 import {
   apiGet,
   apiPost,
@@ -21,6 +21,7 @@ import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
 import { EmptyState, ErrorBanner, LoadingBlock } from "../components/ui/Feedback";
 import { Table, TBody, TD, TH, THead, TR } from "../components/ui/Table";
+import { FollowUpModal } from "../components/FollowUpModal";
 
 const APPROVAL_TYPE_LABELS: Record<string, string> = {
   order_conversion: "转订单审批",
@@ -39,6 +40,7 @@ export function QuoteDetail() {
   const [convertCommitting, setConvertCommitting] = useState(false);
   const [convertError, setConvertError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
 
   if (loading && !data) return <LoadingBlock label="加载报价详情…" />;
   if (error) return <ErrorBanner message={error} onRetry={refetch} />;
@@ -140,6 +142,18 @@ export function QuoteDetail() {
                 <ShoppingCart size={14} /> {convertLoading ? "准备中…" : "转订单"}
               </Button>
             )}
+            {quote.status !== "converted" ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => navigate(`/quotes/new?customerId=${quote.customerId}&contactId=${quote.contactId}&fromQuoteId=${quote.id}`)}
+              >
+                <FileText size={14} /> 修订报价
+              </Button>
+            ) : null}
+            <Button size="sm" variant="secondary" onClick={() => setFollowUpOpen(true)}>
+              <ClipboardList size={14} /> 记录跟进
+            </Button>
             <Button size="sm" variant="secondary" onClick={viewApproval}>
               <CheckSquare size={14} /> 查看审批
             </Button>
@@ -158,7 +172,7 @@ export function QuoteDetail() {
 
       {approval?.type === "order_conversion" && approval.status === "rejected" ? (
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-700">
-          转订单申请已被经理驳回：{approval.comment || approval.reason}。报价本身仍有效，请调整信用或付款方案后重新提交。
+          转订单申请已被经理驳回：{approval.comment || approval.reason}。报价本身仍有效，请先记录跟进并修订报价，或调整信用/付款方案后重新提交。
         </div>
       ) : null}
 
@@ -332,6 +346,14 @@ export function QuoteDetail() {
           </div>
         ) : null}
       </Modal>
+
+      <FollowUpModal
+        open={followUpOpen}
+        onClose={() => setFollowUpOpen(false)}
+        customerId={quote.customerId}
+        opportunityId={quote.opportunityId ?? undefined}
+        onSaved={refetch}
+      />
     </div>
   );
 }

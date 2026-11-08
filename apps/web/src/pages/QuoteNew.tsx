@@ -9,6 +9,7 @@ import {
   type CustomersResponse,
   type InventoryResponse,
   type QuoteCommitResponse,
+  type QuoteDetailResponse,
   type QuotePreviewResponse,
 } from "../api/business";
 import { useAppStore } from "../state/store";
@@ -35,11 +36,14 @@ export function QuoteNew() {
   const { bumpData, pushToast } = useAppStore();
 
   const initialCustomerId = searchParams.get("customerId") ?? "";
-  const opportunityId = searchParams.get("opportunityId") ?? undefined;
+  const initialContactId = searchParams.get("contactId") ?? "";
+  const fromQuoteId = searchParams.get("fromQuoteId") ?? undefined;
+  const [opportunityId, setOpportunityId] = useState<string | undefined>(searchParams.get("opportunityId") ?? undefined);
   const [customerId, setCustomerId] = useState(initialCustomerId);
-  const [contactId, setContactId] = useState("");
+  const [contactId, setContactId] = useState(initialContactId);
   const [lines, setLines] = useState<LineDraft[]>([newLine()]);
   const [notes, setNotes] = useState("");
+  const [prefilled, setPrefilled] = useState(false);
   const [preview, setPreview] = useState<QuotePreviewResponse | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -51,6 +55,9 @@ export function QuoteNew() {
     customerId ? `/api/business/customers/${customerId}` : null,
   );
   const { data: inventoryData } = useApi<InventoryResponse>("/api/business/inventory");
+  const { data: sourceQuote } = useApi<QuoteDetailResponse>(
+    fromQuoteId ? `/api/business/quotes/${fromQuoteId}` : null,
+  );
 
   const products = useMemo(() => {
     const map = new Map<string, { sku: string; name: string; available: number }>();
@@ -78,6 +85,17 @@ export function QuoteNew() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detail]);
+
+  // A revision starts from the source quote, but edits create a brand-new quote.
+  useEffect(() => {
+    if (!fromQuoteId || !sourceQuote || prefilled) return;
+    setCustomerId(sourceQuote.quote.customerId);
+    setContactId(sourceQuote.quote.contactId);
+    setOpportunityId(sourceQuote.quote.opportunityId ?? undefined);
+    setNotes(sourceQuote.quote.notes ?? "");
+    setLines(sourceQuote.lines.map((line) => ({ key: ++lineKey, sku: line.sku ?? "", quantity: String(line.quantity) })));
+    setPrefilled(true);
+  }, [fromQuoteId, sourceQuote, prefilled]);
 
   function markDirty() {
     setPreview(null);
@@ -150,9 +168,21 @@ export function QuoteNew() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="新建报价"
-        description="客户与价格由服务端校验，预览确认后才会生成正式报价单。"
-        actions={<Button size="sm" variant="secondary" onClick={() => navigate("/quotes")}>返回报价列表</Button>}
+        title={fromQuoteId ? "修订报价" : "新建报价"}
+        description={
+          fromQuoteId
+            ? "已预填原报价的客户、联系人和明细；修改后生成一张新报价，原报价保留为历史。"
+            : "客户与价格由服务端校验，预览确认后才会生成正式报价单。"
+        }
+        actions={
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => navigate(fromQuoteId ? `/quotes/${fromQuoteId}` : "/quotes")}
+          >
+            {fromQuoteId ? "返回原报价" : "返回报价列表"}
+          </Button>
+        }
       />
 
       {customersError ? <ErrorBanner message={customersError} /> : null}

@@ -47,6 +47,12 @@ test("manual quote can be previewed and committed", async ({ page }) => {
   await page.getByRole("button", { name: "确认生成" }).click();
   await expect(page).toHaveURL(/\/quotes\/q_/, { timeout: 30_000 });
   await expect(page.getByTestId("quote-no")).toContainText(/Q-\d{4}-/);
+
+  await page.getByRole("button", { name: "修订报价" }).click();
+  await expect(page.getByLabel("客户")).toHaveValue("c_huachen");
+  await expect(page.getByLabel("联系人")).toHaveValue("ct_zhang_1");
+  await expect(page.getByLabel("产品").first()).toHaveValue("X1");
+  await expect(page.getByLabel("数量").first()).toHaveValue("2");
 });
 
 test("role switch enforces approval and inventory permissions", async ({ page }) => {
