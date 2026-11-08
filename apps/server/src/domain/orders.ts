@@ -4,6 +4,7 @@ import { AppError } from "@salespilot/shared";
 import type { ToolContext } from "../tools/types.js";
 import { customers, inventory, opportunities, orderLines, orders, quoteLines, quotes, stockReservations, warehouses } from "../db/schema.js";
 import { checkCredit } from "./credit.js";
+import { nextOrderNo } from "./documentNo.js";
 import { planAllocation, reserveWithVersion } from "./inventory.js";
 
 export function createOrderFromQuote(
@@ -47,7 +48,7 @@ export function createOrderFromQuote(
     const orderId = `o_${randomUUID()}`;
     ctx.db.insert(orders).values({
       id: orderId,
-      orderNo: `SO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+      orderNo: nextOrderNo(ctx.db),
       quoteId: quote.id,
       opportunityId: quote.opportunityId,
       customerId: quote.customerId,

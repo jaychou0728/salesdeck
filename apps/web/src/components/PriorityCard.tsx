@@ -40,7 +40,7 @@ export function PriorityCard({
           <span className="text-slate-300">·</span>
           <span className="font-medium text-slate-700">{item.name}</span>
         </div>
-        <div className="mt-1 text-[11px] text-slate-400">
+        <div className="mt-1 text-[11px] text-slate-500">
           成交概率 {item.probability}% ·{" "}
           <span title="用于排序的综合评分，不等于成交概率">优先级评分 {item.score}</span>
           {showOwner && item.ownerName ? ` · 负责人 ${item.ownerName}` : ""}
@@ -59,7 +59,7 @@ export function PriorityCard({
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="mt-1 self-start text-[11px] text-slate-400 hover:text-teal-700"
+          className="mt-1 self-start text-[11px] text-slate-500 hover:text-teal-700"
         >
           {expanded ? "收起" : `展开剩余 ${hiddenCount} 条`}
         </button>
@@ -79,17 +79,23 @@ export function PriorityCard({
         </div>
       ) : null}
 
-      <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 pt-3">
-        <Link to={`/customers/${item.customerId}`} className="text-xs text-slate-500 hover:text-teal-700">
+      <div className="mt-auto flex flex-wrap items-center gap-x-1 gap-y-1 pt-3">
+        <Link
+          to={`/customers/${item.customerId}`}
+          className="inline-flex items-center rounded-lg px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-100 hover:text-teal-700"
+        >
           查看客户
         </Link>
-        <Link to={`/opportunities/${item.opportunityId}`} className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-teal-700">
+        <Link
+          to={`/opportunities/${item.opportunityId}`}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-100 hover:text-teal-700"
+        >
           查看商机 <ArrowRight size={12} />
         </Link>
         <button
           type="button"
           onClick={() => onLogFollowUp(item)}
-          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-teal-700"
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-100 hover:text-teal-700"
         >
           <ClipboardList size={13} /> 记录跟进
         </button>

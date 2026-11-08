@@ -4,6 +4,7 @@ import { CreateAfterSalesTicketInput, fail, ok } from "@salespilot/shared";
 import { afterSalesTickets, customers, knowledgeChunks, orders, products } from "../../db/schema.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { withIdempotency } from "../../domain/idempotency.js";
+import { nextTicketNo } from "../../domain/documentNo.js";
 import { assertCustomerAccess } from "../../domain/permissions.js";
 import type { ToolDefinition } from "../types.js";
 
@@ -47,7 +48,7 @@ export const createAfterSalesTicket: ToolDefinition<CreateAfterSalesTicketInput,
       const ticketId = `tk_${randomUUID()}`;
       ctx.db.insert(afterSalesTickets).values({
         id: ticketId,
-        ticketNo: `AS-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+        ticketNo: nextTicketNo(ctx.db),
         customerId: input.customerId,
         orderId: input.orderId ?? null,
         productId: input.productId,

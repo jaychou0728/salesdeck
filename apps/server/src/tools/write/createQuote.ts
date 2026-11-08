@@ -6,6 +6,7 @@ import { createApproval } from "../../domain/approvals.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { withIdempotency } from "../../domain/idempotency.js";
 import { assertCustomerAccess } from "../../domain/permissions.js";
+import { nextQuoteNo } from "../../domain/documentNo.js";
 import { computeQuoteTotals, computeUnitPrice } from "../../domain/pricing.js";
 import type { ToolDefinition } from "../types.js";
 
@@ -71,7 +72,7 @@ export const createQuote: ToolDefinition<CreateQuoteInput, unknown> = {
       const status = linePreviews.some((line) => line.belowFloor) ? "pending_approval" : "approved";
       ctx.db.insert(quotes).values({
         id: quoteId,
-        quoteNo: `Q-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+        quoteNo: nextQuoteNo(ctx.db),
         customerId: customer.id,
         contactId: contact.id,
         opportunityId: input.opportunityId ?? null,

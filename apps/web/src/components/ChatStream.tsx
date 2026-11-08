@@ -117,6 +117,13 @@ export function ChatStream() {
 
   const lastAssistant = [...messages].reverse().find((message) => message.role === "assistant")?.content ?? "";
   const hasActionArtifact = artifacts.some((artifact) => artifact.kind === "actions");
+  const actorName = actorId === "u_manager_wang" ? "老王" : "小林";
+  const traceId = trace.find((event) => event.traceId)?.traceId;
+  const toolCallCount = trace.filter(
+    (event) => event.type === "step.start" && event.name && !["intent", "plan", "retrieval"].includes(event.name),
+  ).length;
+  const totalLatency = trace.reduce((sum, event) => sum + (event.latencyMs ?? 0), 0);
+  const hasTraceError = trace.some((event) => event.status === "error");
   const needsConfirmation =
     !streaming &&
     !pendingApprovalId &&
@@ -153,7 +160,7 @@ export function ChatStream() {
             <Activity size={12} /> 执行过程
           </button>
         </div>
-        <span className="text-[10px] text-slate-400">{view === "execution" ? `${trace.length} 步` : "AI 助手"}</span>
+        <span className="text-[10px] text-slate-400">{view === "execution" ? `${toolCallCount} 次工具` : "AI 助手"}</span>
       </div>
 
       {chatContext ? (
@@ -167,6 +174,23 @@ export function ChatStream() {
 
       {view === "execution" ? (
         <div className="flex-1 overflow-y-auto p-4" data-testid="execution-view">
+          {trace.length > 0 ? (
+            <div className="mb-3 rounded-lg border border-slate-200 bg-white p-3 text-[11px] text-slate-600">
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <span className="font-medium text-slate-800">执行摘要</span>
+                <span className={hasTraceError ? "text-rose-600" : "text-emerald-700"}>
+                  {hasTraceError ? "有错误" : "正常"}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-slate-500">
+                <span>操作人 {actorName}</span>
+                <span>{trace.length} 个事件</span>
+                <span>{toolCallCount} 次工具调用</span>
+                <span>总耗时 {totalLatency}ms</span>
+              </div>
+              {traceId ? <div className="mt-1 truncate font-mono text-[10px] text-slate-400">{traceId}</div> : null}
+            </div>
+          ) : null}
           <div className="mb-3 text-[11px] text-slate-500">每一次工具调用、参数与结果都会留痕，可展开查看。</div>
           <TraceTimeline events={trace} emptyText="本次对话还没有工具调用记录。" />
         </div>

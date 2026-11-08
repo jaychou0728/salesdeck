@@ -25,7 +25,7 @@ export function Composer({ onSend, disabled }: { onSend: (message: string) => vo
             key={example}
             type="button"
             disabled={disabled}
-            className="whitespace-nowrap rounded-full border border-slate-200 px-3 py-1 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="whitespace-nowrap rounded-full border border-slate-200 px-3 py-1.5 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => onSend(example)}
           >
             {example}

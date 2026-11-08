@@ -42,7 +42,7 @@ export function TodoPanel({
       <CardHeader
         title="我的待办"
         description="按紧急程度排序"
-        actions={<span className="text-[11px] text-slate-400">{all.length} 项</span>}
+        actions={<span className="text-[11px] text-slate-500">{all.length} 项</span>}
       />
       <CardBody className="space-y-2">
         {all.length === 0 ? (
