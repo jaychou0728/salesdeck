@@ -63,7 +63,12 @@ export function Dashboard() {
               icon={<Target size={15} />}
               tone={data.metrics.completionRate >= 0.8 ? "teal" : data.metrics.completionRate >= 0.5 ? "amber" : "rose"}
             />
-            <StatCard label="预计成交" value={formatMoney(data.metrics.expectedCloseCents)} icon={<TrendingUp size={15} />} />
+            <StatCard
+              label="加权预计成交"
+              value={formatMoney(data.metrics.expectedCloseCents)}
+              hint="按成交概率加权"
+              icon={<TrendingUp size={15} />}
+            />
             <StatCard label="进行中商机" value={data.metrics.activeOpportunities} icon={<Users size={15} />} />
             <StatCard
               label="高风险商机"
@@ -88,7 +93,13 @@ export function Dashboard() {
                 <EmptyState title="今天没有需要紧急推进的商机" description="可以整理客户资料或开发新线索。" />
               ) : (
                 data.priorities.map((item) => (
-                  <PriorityCard key={item.opportunityId} item={item} onAskAI={askAi} onLogFollowUp={setFollowUpTarget} />
+                  <PriorityCard
+                    key={item.opportunityId}
+                    item={item}
+                    onAskAI={askAi}
+                    onLogFollowUp={setFollowUpTarget}
+                    showOwner={role === "manager"}
+                  />
                 ))
               )}
             </CardBody>
@@ -136,7 +147,7 @@ export function Dashboard() {
                       <TH className="text-right">本月销售额</TH>
                       <TH className="text-right">管道金额</TH>
                       <TH className="text-right">目标完成率</TH>
-                      <TH>趋势</TH>
+                      <TH>目标达成</TH>
                     </TR>
                   </THead>
                   <TBody>
@@ -148,7 +159,7 @@ export function Dashboard() {
                         <TD className="text-right tabular-nums">{Math.round(row.completionRate * 100)}%</TD>
                         <TD>
                           <Badge tone={row.trend === "up" ? "success" : row.trend === "flat" ? "warning" : "danger"}>
-                            {row.trend === "up" ? "↑ 上升" : row.trend === "flat" ? "→ 持平" : "↓ 落后"}
+                            {row.trend === "up" ? "达成" : row.trend === "flat" ? "接近" : "落后"}
                           </Badge>
                         </TD>
                       </TR>

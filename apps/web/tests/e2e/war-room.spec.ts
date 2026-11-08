@@ -85,3 +85,20 @@ test("manager rejection clears the sales approval card and updates the next acti
   await page.getByRole("button", { name: "关闭 AI 助手" }).click();
   await expect(page.getByText("转订单审批被驳回", { exact: false }).first()).toBeVisible({ timeout: 15_000 });
 });
+
+test("reset demo asks for confirmation", async ({ page }) => {
+  await page.goto("/dashboard");
+  await page.getByRole("button", { name: "重置演示" }).click();
+  await expect(page.getByText("重置演示数据？")).toBeVisible();
+  await page.getByRole("button", { name: "取消" }).click();
+  await expect(page.getByText("重置演示数据？")).toHaveCount(0);
+});
+
+test("mobile navigation exposes key pages", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/dashboard");
+  await page.getByRole("button", { name: "打开导航" }).click();
+  await expect(page.getByTestId("mobile-nav")).toBeVisible();
+  await page.getByTestId("mobile-nav").getByRole("link", { name: "商机" }).click();
+  await expect(page).toHaveURL(/\/opportunities$/);
+});

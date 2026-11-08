@@ -143,6 +143,15 @@ export function QuoteDetail() {
         }
       />
 
+      {quote.opportunityId ? (
+        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-500">
+          所属商机
+          <Link to={`/opportunities/${quote.opportunityId}`} className="font-medium text-teal-700 hover:underline">
+            查看商机
+          </Link>
+        </div>
+      ) : null}
+
       {!canConvert && quote.status !== "converted" ? (
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-500">
           当前报价状态为「{statusLabel(quote.status)}」，只有已批准且未过期的报价才能转订单。

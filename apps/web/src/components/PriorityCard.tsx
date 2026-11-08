@@ -11,10 +11,12 @@ export function PriorityCard({
   item,
   onAskAI,
   onLogFollowUp,
+  showOwner = true,
 }: {
   item: PriorityItem;
   onAskAI: (item: PriorityItem) => void;
   onLogFollowUp: (item: PriorityItem) => void;
+  showOwner?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const hiddenCount = Math.max(0, item.reasons.length - 3);
@@ -39,8 +41,9 @@ export function PriorityCard({
           <span className="font-medium text-slate-700">{item.name}</span>
         </div>
         <div className="mt-1 text-[11px] text-slate-400">
-          成交概率 {item.probability}% · 优先级得分 {item.score}
-          {item.ownerName ? ` · 负责人 ${item.ownerName}` : ""}
+          成交概率 {item.probability}% ·{" "}
+          <span title="用于排序的综合评分，不等于成交概率">优先级评分 {item.score}</span>
+          {showOwner && item.ownerName ? ` · 负责人 ${item.ownerName}` : ""}
         </div>
       </div>
 

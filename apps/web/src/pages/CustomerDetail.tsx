@@ -129,6 +129,11 @@ export function CustomerDetail() {
                         {item.priority ? (
                           <Badge tone={item.priority === "P0" ? "danger" : item.priority === "P1" ? "warning" : "neutral"}>{item.priority}</Badge>
                         ) : null}
+                        {item.riskLevel === "high" && item.reasons.some((reason) => reason.includes("信用已用")) ? (
+                          <span title="该风险来自客户信用额度，可能影响该客户的多个商机">
+                            <Badge tone="warning">客户级风险</Badge>
+                          </span>
+                        ) : null}
                       </div>
                       <div className="mt-1 text-xs text-slate-500">
                         {formatMoney(item.amountCents)} · 成交概率 {item.probability}%

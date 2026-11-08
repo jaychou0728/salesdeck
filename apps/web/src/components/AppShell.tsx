@@ -6,6 +6,7 @@ import {
   FileText,
   History,
   LayoutDashboard,
+  Menu,
   Package,
   RotateCcw,
   Shield,
@@ -13,6 +14,7 @@ import {
   Target,
   Users,
   Wrench,
+  X,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAppStore, useRole } from "../state/store";
@@ -21,6 +23,8 @@ import { AiDrawer } from "./AiDrawer";
 import { AuditDrawer } from "./AuditDrawer";
 import { ToastHost } from "./ui/Toast";
 import { Spinner } from "./ui/Feedback";
+import { Button } from "./ui/Button";
+import { Modal } from "./ui/Modal";
 
 const BASE_NAV = [
   { to: "/dashboard", label: "工作台", icon: LayoutDashboard, testId: "nav-dashboard" },
@@ -32,6 +36,7 @@ const BASE_NAV = [
   { to: "/tickets", label: "售后", icon: Wrench, testId: "nav-tickets" },
 ];
 
+const APPROVAL_NAV = { to: "/approvals", label: "审批", icon: CheckSquare, testId: "nav-approvals" };
 const AUDIT_NAV = { to: "/audit", label: "审计", icon: History, testId: "nav-audit" };
 
 export function AppShell() {
@@ -39,6 +44,8 @@ export function AppShell() {
   const role = useRole();
   const navigate = useNavigate();
   const [resetting, setResetting] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const { data: me } = useApi<MeResponse>("/api/business/me");
   useEffect(() => {
@@ -47,6 +54,11 @@ export function AppShell() {
 
   const { data: dashboard } = useApi<DashboardResponse>(role === "manager" ? "/api/business/dashboard" : null);
   const pendingCount = dashboard?.metrics.pendingApprovals ?? 0;
+  const mobileNavItems: Array<{ to: string; label: string; icon: typeof LayoutDashboard; badge?: number }> = [
+    ...BASE_NAV,
+    ...(role === "manager" ? [{ ...APPROVAL_NAV, badge: pendingCount }] : []),
+    AUDIT_NAV,
+  ];
 
   function switchActor(next: string) {
     if (next === actorId) return;
@@ -74,19 +86,25 @@ export function AppShell() {
   return (
     <div className="flex h-screen flex-col bg-slate-50">
       <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4">
-        <div className="flex min-w-0 items-center gap-4">
+        <div className="flex min-w-0 items-center gap-2 md:gap-4">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen((value) => !value)}
+            aria-label={mobileNavOpen ? "关闭导航" : "打开导航"}
+            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 md:hidden"
+          >
+            {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-[11px] font-bold text-white">SP</div>
             <div className="text-sm font-semibold tracking-tight text-slate-900">SalesPilot</div>
           </div>
 
-          <nav className="flex items-center gap-0.5 overflow-x-auto" aria-label="主导航">
+          <nav className="hidden items-center gap-0.5 overflow-x-auto md:flex" aria-label="主导航">
             {BASE_NAV.map((item) => (
               <NavItem key={item.to} {...item} />
             ))}
-            {role === "manager" ? (
-              <NavItem to="/approvals" label="审批" icon={CheckSquare} testId="nav-approvals" badge={pendingCount} />
-            ) : null}
+            {role === "manager" ? <NavItem {...APPROVAL_NAV} badge={pendingCount} /> : null}
             <NavItem {...AUDIT_NAV} />
           </nav>
         </div>
@@ -115,15 +133,53 @@ export function AppShell() {
           </button>
           <button
             type="button"
-            onClick={resetDemo}
+            onClick={() => setResetConfirmOpen(true)}
             disabled={resetting}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+            className="hidden items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-50 sm:inline-flex"
           >
             {resetting ? <Spinner className="h-3.5 w-3.5" /> : <RotateCcw size={14} />}
             重置演示
           </button>
         </div>
       </header>
+
+      {mobileNavOpen ? (
+        <div className="border-b border-slate-200 bg-white px-3 py-2 md:hidden" data-testid="mobile-nav">
+          <div className="grid grid-cols-3 gap-1">
+            {mobileNavItems.map(({ to, label, icon: Icon, badge }) => (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={() => setMobileNavOpen(false)}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-colors",
+                    isActive ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
+                  )
+                }
+              >
+                <Icon size={14} />
+                {label}
+                {badge && badge > 0 ? (
+                  <span className="ml-auto rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                    {badge}
+                  </span>
+                ) : null}
+              </NavLink>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileNavOpen(false);
+              setResetConfirmOpen(true);
+            }}
+            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-600 hover:bg-slate-50"
+          >
+            <RotateCcw size={14} /> 重置演示数据
+          </button>
+        </div>
+      ) : null}
 
       <div
         data-testid="permission-banner"
@@ -146,6 +202,32 @@ export function AppShell() {
 
       <AiDrawer />
       <AuditDrawer />
+      <Modal
+        open={resetConfirmOpen}
+        onClose={() => setResetConfirmOpen(false)}
+        title="重置演示数据？"
+        description="会清空当前演示数据并重新灌入初始数据，AI 会话也会清空。"
+        footer={
+          <>
+            <Button size="sm" variant="secondary" onClick={() => setResetConfirmOpen(false)}>
+              取消
+            </Button>
+            <Button
+              size="sm"
+              variant="danger"
+              disabled={resetting}
+              onClick={() => {
+                setResetConfirmOpen(false);
+                void resetDemo();
+              }}
+            >
+              {resetting ? "重置中…" : "重置数据"}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-xs leading-relaxed text-slate-500">建议在正式演示前执行；重置后页面会回到作战室。</p>
+      </Modal>
       <ToastHost />
     </div>
   );

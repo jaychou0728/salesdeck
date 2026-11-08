@@ -590,6 +590,7 @@ export function listOpportunityViews(
       const scored = scoreOpportunity(toPriorityInput(db, row, now), now);
       return {
         ...base,
+        riskLevel: scored.riskLevel,
         priority: scored.priority,
         score: scored.score,
         reasons: scored.reasons,

@@ -690,7 +690,8 @@ export function registerBusiness(app: FastifyInstance, deps: { db: Db; sqlite: D
             .where(and(eq(approvals.targetType, "quote"), eq(approvals.targetId, quote.id)))
             .orderBy(desc(approvals.createdAt))
             .get() ?? null;
-        return { ok: true, quote, customer, contact, lines, approval };
+        const owner = deps.db.select({ name: users.name }).from(users).where(eq(users.id, quote.ownerId)).get();
+        return { ok: true, quote: { ...quote, ownerName: owner?.name ?? null }, customer, contact, lines, approval };
       }),
     );
 
@@ -899,7 +900,8 @@ export function registerBusiness(app: FastifyInstance, deps: { db: Db; sqlite: D
           .leftJoin(warehouses, eq(stockReservations.warehouseId, warehouses.id))
           .where(eq(stockReservations.orderId, order.id))
           .all();
-        return { ok: true, order, customer, lines, reservations };
+        const owner = deps.db.select({ name: users.name }).from(users).where(eq(users.id, order.ownerId)).get();
+        return { ok: true, order: { ...order, ownerName: owner?.name ?? null }, customer, lines, reservations };
       }),
     );
 

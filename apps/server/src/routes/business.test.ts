@@ -257,6 +257,7 @@ describe("business workspace", () => {
     expect(detail.statusCode).toBe(200);
     const detailBody = detail.json();
     expect(detailBody.quote.id).toBe(quoteId);
+    expect(detailBody.quote.ownerName).toBe("小林");
     expect(detailBody.customer.name).toBe("华辰设计");
     expect(detailBody.contact.name).toBe("张总");
     expect(detailBody.lines).toHaveLength(1);
@@ -345,6 +346,7 @@ describe("business workspace", () => {
 
     const orderDetail = await app.inject({ method: "GET", url: `/api/business/orders/${order.id}`, headers: as("u_sales_lin") });
     expect(orderDetail.statusCode).toBe(200);
+    expect(orderDetail.json().order.ownerName).toBe("小林");
     expect(orderDetail.json().lines.length).toBeGreaterThan(0);
     expect(orderDetail.json().reservations.length).toBeGreaterThan(0);
   });

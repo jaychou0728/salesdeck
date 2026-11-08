@@ -37,11 +37,20 @@ export function OrderDetail() {
         description={
           customer ? (
             <span>
-              客户 <Link to={`/customers/${customer.id}`} className="text-teal-700 hover:underline">{customer.name}</Link> · {order.paymentTerms} · 负责人 {order.ownerId}
+              客户 <Link to={`/customers/${customer.id}`} className="text-teal-700 hover:underline">{customer.name}</Link> · {order.paymentTerms} · 负责人 {order.ownerName ?? order.ownerId}
             </span>
           ) : undefined
         }
       />
+
+      {order.opportunityId ? (
+        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-500">
+          所属商机
+          <Link to={`/opportunities/${order.opportunityId}`} className="font-medium text-teal-700 hover:underline">
+            查看商机
+          </Link>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">

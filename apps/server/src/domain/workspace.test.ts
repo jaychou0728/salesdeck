@@ -61,6 +61,8 @@ describe("workspace service", () => {
     expect(all.length).toBe(8);
     const quoteStage = listOpportunityViews(db, actor, { stage: "quote" });
     expect(quoteStage.every((row) => row.stage === "quote")).toBe(true);
+    const storage = listOpportunityViews(db, actor, { customerId: "c_huachen" }).find((row) => row.id === "o_huachen_storage");
+    expect(storage?.riskLevel).toBe("high");
   });
 
   it("links sales approval todos to the quote and manager todos to the queue", () => {

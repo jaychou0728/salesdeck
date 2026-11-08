@@ -172,6 +172,7 @@ export interface CreditInfo {
 export interface QuoteRow {
   id: string;
   quoteNo: string;
+  opportunityId: string | null;
   customerId: string;
   contactId: string;
   ownerId: string;
@@ -192,6 +193,7 @@ export interface OrderRow {
   id: string;
   orderNo: string;
   quoteId: string;
+  opportunityId: string | null;
   customerId: string;
   ownerId: string;
   status: string;
