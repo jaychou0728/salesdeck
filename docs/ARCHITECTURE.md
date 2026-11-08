@@ -97,7 +97,7 @@ type ToolResult<T> =
 | 5 | `search_knowledge` | 读 | `query, docTypes?, topK?` | 混合检索；返回 `chunks[]` 与 `hasSufficientEvidence`；证据不足给出警告 |
 | 6 | `get_sales_briefing` | 读 | `scope, date?` | 实时计算信用风险、库存风险、48h 内到期报价；`team` 仅经理 |
 | 7 | `create_quote` | 写 | `customerId, contactId, lines, validDays?, dryRun, confirmationToken?, idempotencyKey?` | dry-run 出预览与令牌；提交时重算价格；低于底线转 `pending_approval` |
-| 8 | `convert_quote_to_order` | 写 | `quoteId, paymentTerms?, dryRun, ...` | 校验报价状态、信用、库存；库存不足直接拒绝；信用不足创建审批，不建订单 |
+| 8 | `convert_quote_to_order` | 写 | `quoteId, lines?[{quoteLineId,quantity}], paymentTerms?, dryRun, ...` | 支持按明细部分转单（拆单），不传 `lines` 则转全部剩余；校验报价状态、信用、库存；库存不足直接拒绝；信用不足创建审批，不建订单；全部数量转完才把报价置为 `converted` |
 | 9 | `create_after_sales_ticket` | 写 | `customerId, orderId?, productId, serialNo?, issueType, description, policyRefs[], dryRun, ...` | `policyRefs` 必须真实存在于知识库 chunk；先预览再提交 |
 | 10 | `get_sales_priorities` | 读 | `scope, limit?, focus?` | 复用 `domain/workspace`，返回今日优先级、指标、待办；`team` 仅经理 |
 | 11 | `get_opportunity_detail` | 读 | `opportunityId` | 商机 + 客户 + 关联报价/订单 + 跟进 + 风险信号 + 建议下一步 |
@@ -116,6 +116,7 @@ type ToolResult<T> =
 3. **幂等**：写提交必须带 `idempotencyKey`；按 `stableStringify(request)` 计算哈希，重复请求返回首次结果并标记 `replayed: true`，键被不同请求复用时返回 `CONFLICT`。
 4. **事务与乐观锁**：订单创建、库存预留与信用占用在同一事务内完成；库存使用 `version` 乐观锁防止超卖。
 5. **审批持久化**：信用超额 / 报价低于底线时落 `approvals` 待审批记录，经理通过 `POST /api/approvals/:id/decide` 决定，不依赖长生命周期图检查点。
+6. **拆单转订单**：`convert_quote_to_order` 可携带 `lines[{quoteLineId, quantity}]` 只转部分明细；信用/库存只按本次数量校验，审批载荷记录本次明细与金额，经理批准后创建对应部分订单；`quote_lines.converted_quantity` 累计已转数量，全部转完报价才置为 `converted`、商机才置为 `won`。
 
 ## 6. RAG
 
@@ -161,7 +162,7 @@ type ToolResult<T> =
 
 - **主数据**：`users`（含 `monthly_target_cents`）、`customers`、`contacts`、`products`、`price_rules`、`warehouses`、`inventory`。
 - **商机与跟进**：`opportunities`、`follow_ups`；`quotes.opportunity_id`、`orders.opportunity_id` 显式关联商机。
-- **交易**：`quotes`、`quote_lines`、`orders`、`order_lines`、`stock_reservations`、`approvals`、`after_sales_tickets`。
+- **交易**：`quotes`、`quote_lines`（`converted_quantity` 记录已转数量，支持拆单）、`orders`、`order_lines`、`stock_reservations`、`approvals`、`after_sales_tickets`。
 - **智能与审计**：`conversations`、`messages`、`traces`、`trace_events`、`audit_logs`、`idempotency_keys`、`confirmation_tokens`、`knowledge_docs`、`knowledge_chunks`。
 - 金额统一以「分」为整数存储；seed 使用固定 ID 与相对当前时间的有效期，保证可复现。
 
@@ -174,6 +175,6 @@ type ToolResult<T> =
 
 ## 11. 质量证据
 
-- Vitest：shared 14 个测试 + 服务端 128 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、优先级引擎、workspace 聚合、商机创建/跟进、审批驳回与提额闭环、单据编号、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
-- Playwright：11 条端到端测试（含作战室、商机创建、客户跟进、经理视图、AI 推进、审批驳回、重置确认与移动端导航）。
+- Vitest：shared 14 个测试 + 服务端 132 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、拆单转订单、优先级引擎、workspace 聚合、商机创建/跟进、审批驳回与提额闭环、单据编号、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
+- Playwright：12 条端到端测试（含作战室、商机创建、客户跟进、经理视图、AI 推进、审批驳回、拆单转单、重置确认与移动端导航）。
 - Agent 评测：30 条 golden cases，当前通过率 100%（见 `docs/EVAL_REPORT.md`）。

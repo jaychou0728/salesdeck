@@ -351,6 +351,59 @@ describe("business workspace", () => {
     expect(orderDetail.json().reservations.length).toBeGreaterThan(0);
   });
 
+  it("previews and converts selected lines as a partial order", async () => {
+    const { app } = setup();
+    const quoteId = await createQuoteViaApi(app, 120);
+    const detail = await app.inject({ method: "GET", url: `/api/business/quotes/${quoteId}`, headers: as("u_sales_lin") });
+    const quote = detail.json().quote as { totalCents: number };
+    const line = detail.json().lines[0] as { id: string; convertedQuantity: number };
+    expect(line.convertedQuantity).toBe(0);
+
+    const preview = await app.inject({
+      method: "POST",
+      url: `/api/business/quotes/${quoteId}/convert-preview`,
+      headers: as("u_sales_lin"),
+      payload: { lines: [{ quoteLineId: line.id, quantity: 20 }] },
+    });
+    expect(preview.statusCode).toBe(200);
+    const previewBody = preview.json();
+    expect(previewBody.preview.totalCents).toBeLessThan(quote.totalCents);
+    expect(previewBody.preview.fullyConvertedAfter).toBe(false);
+    expect(previewBody.preview.requiresApproval).toBe(true);
+    expect(previewBody.preview.lines[0]).toMatchObject({ convertingQuantity: 20, remainingAfter: 100 });
+
+    const convert = await app.inject({
+      method: "POST",
+      url: `/api/business/quotes/${quoteId}/convert`,
+      headers: as("u_sales_lin"),
+      payload: { token: previewBody.confirmationToken, payload: previewBody.input, idempotencyKey: "idem-partial-convert-1" },
+    });
+    expect(convert.statusCode).toBe(200);
+    expect(convert.json().data.status).toBe("pending_approval");
+    const approvalId = convert.json().data.approvalId as string;
+
+    const approvals = await app.inject({ method: "GET", url: "/api/business/approvals", headers: as("u_manager_wang") });
+    const listed = approvals.json().approvals.find((row: { id: string }) => row.id === approvalId);
+    expect(listed.amountCents).toBe(previewBody.preview.totalCents);
+
+    const decision = await app.inject({
+      method: "POST",
+      url: `/api/approvals/${approvalId}/decide`,
+      headers: as("u_manager_wang"),
+      payload: { decision: "approve", comment: "同意分批交付", idempotencyKey: "idem-partial-approve-1" },
+    });
+    expect(decision.statusCode).toBe(200);
+
+    const after = await app.inject({ method: "GET", url: `/api/business/quotes/${quoteId}`, headers: as("u_sales_lin") });
+    expect(after.json().quote.status).toBe("approved");
+    expect(after.json().lines[0].convertedQuantity).toBe(20);
+
+    const orders = await app.inject({ method: "GET", url: "/api/business/orders", headers: as("u_sales_lin") });
+    const order = orders.json().orders.find((row: { quoteId: string }) => row.quoteId === quoteId);
+    expect(order).toBeTruthy();
+    expect(order.totalCents).toBe(previewBody.preview.totalCents);
+  });
+
   it("returns scoped dashboard metrics and alerts", async () => {
     const { app } = setup();
 

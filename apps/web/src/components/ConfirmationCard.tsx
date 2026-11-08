@@ -94,7 +94,7 @@ export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact
         {lines.map((line: any, index: number) => (
           <div key={`${line.sku ?? line.productId}-${index}`} className="flex justify-between">
             <span>
-              {line.sku ?? line.productName} × {line.quantity}
+              {line.sku ?? line.productName} × {line.convertingQuantity ?? line.quantity}
             </span>
             <span>{formatMoney(line.lineTotalCents ?? line.finalPriceCents ?? line.unitPriceCents ?? 0)}</span>
           </div>

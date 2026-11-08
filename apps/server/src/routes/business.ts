@@ -71,6 +71,14 @@ const QUOTE_PREVIEW = z.object({
   actorId: z.string().optional(),
 });
 
+const CONVERT_PREVIEW = z.object({
+  lines: z
+    .array(z.object({ quoteLineId: z.string().min(1), quantity: z.number().int().positive() }))
+    .min(1)
+    .max(50)
+    .optional(),
+});
+
 const COMMIT = z.object({
   token: z.string().min(10),
   payload: z.record(z.unknown()),
@@ -187,7 +195,7 @@ export function registerBusiness(app: FastifyInstance, deps: { db: Db; sqlite: D
       : targetCustomer;
     const requester = db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, row.requesterId)).get();
     const approver = row.approverId ? db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, row.approverId)).get() : undefined;
-    const payload = parseJson(row.payloadJson, {}) as { requestedLimitCents?: number };
+    const payload = parseJson(row.payloadJson, {}) as { requestedLimitCents?: number; amountCents?: number };
     return {
       id: row.id,
       type: row.type,
@@ -200,7 +208,7 @@ export function registerBusiness(app: FastifyInstance, deps: { db: Db; sqlite: D
       requesterName: requester?.name ?? null,
       approverId: row.approverId,
       approverName: approver?.name ?? null,
-      amountCents: quote?.totalCents ?? payload.requestedLimitCents ?? 0,
+      amountCents: payload.amountCents ?? quote?.totalCents ?? payload.requestedLimitCents ?? 0,
       customerId: customer?.id ?? null,
       customerName: customer?.name ?? null,
       createdAt: row.createdAt,
@@ -795,17 +803,33 @@ export function registerBusiness(app: FastifyInstance, deps: { db: Db; sqlite: D
     app.post(
       "/api/business/quotes/:id/convert-preview",
       {
+        attachValidation: true,
         schema: {
           tags: ["business"],
-          summary: "Preview converting a quote to an order",
+          summary: "Preview converting a quote to an order, optionally for selected lines (split conversion)",
           params: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
+          body: {
+            type: "object",
+            properties: {
+              lines: {
+                type: "array",
+                items: {
+                  type: "object",
+                  required: ["quoteLineId", "quantity"],
+                  properties: { quoteLineId: { type: "string" }, quantity: { type: "integer" } },
+                },
+              },
+            },
+          },
         },
       },
       handle(async (request, reply) => {
         const actor = actorOf(request);
         const { id } = request.params as { id: string };
+        const input = parseBody(CONVERT_PREVIEW, request.body ?? {});
         const outcome = await executeTool(toolMap.get("convert_quote_to_order")!, toolContext(actor, `manual_convert_${randomUUID()}`), {
           quoteId: id,
+          lines: input.lines,
           dryRun: true,
         });
         if (!outcome.model.ok) {

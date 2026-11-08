@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { allTools, executeTool } from "./index.js";
-import { approvals, customers, opportunities, orders, priceRules, quotes } from "../db/schema.js";
+import { approvals, customers, opportunities, orders, priceRules, quoteLines, quotes } from "../db/schema.js";
 import { decideApproval } from "../domain/approvals.js";
 import type { Actor } from "@salespilot/shared";
 
@@ -149,6 +149,153 @@ describe("write tools", () => {
     expect(order?.status).toBe("reserved");
     const customer = db.select().from(customers).where(eq(customers.id, "c_huachen")).get();
     expect(customer!.creditUsedCents).toBeGreaterThan(4_600_000);
+  });
+
+  it("converts part of a quote and leaves the rest convertible", async () => {
+    const { ctx, events, db } = setup();
+    const base = {
+      customerId: "c_huachen",
+      contactId: "ct_zhang_1",
+      opportunityId: "o_huachen_server",
+      lines: [{ sku: "X1", quantity: 5 }],
+    };
+    const preview = await executeTool(tool("create_quote"), ctx, { ...base, dryRun: true });
+    expect(preview.model.ok).toBe(true);
+    const quoteToken = events.find((event) => event.type === "artifact").payload.confirmationToken;
+    const committed = await executeTool(tool("create_quote"), ctx, {
+      ...base,
+      dryRun: false,
+      confirmationToken: quoteToken,
+      idempotencyKey: "idem-split-quote",
+    });
+    expect(committed.model.ok).toBe(true);
+    const quoteId = (committed.model as any).data.quote.id as string;
+    const quote = db.select().from(quotes).where(eq(quotes.id, quoteId)).get()!;
+    const line = db.select().from(quoteLines).where(eq(quoteLines.quoteId, quoteId)).get()!;
+
+    const partialPreview = await executeTool(tool("convert_quote_to_order"), ctx, {
+      quoteId,
+      lines: [{ quoteLineId: line.id, quantity: 2 }],
+      dryRun: true,
+    });
+    expect(partialPreview.model.ok).toBe(true);
+    const partialPlan = (partialPreview.model as any).data.preview;
+    expect(partialPlan.totalCents).toBeLessThan(quote.totalCents);
+    expect(partialPlan.fullyConvertedAfter).toBe(false);
+    expect(partialPlan.lines[0]).toMatchObject({ remainingQuantity: 5, convertingQuantity: 2, remainingAfter: 3 });
+
+    const partialToken = events.filter((event) => event.type === "artifact").at(-1)!.payload.confirmationToken;
+    const partial = await executeTool(tool("convert_quote_to_order"), ctx, {
+      quoteId,
+      lines: [{ quoteLineId: line.id, quantity: 2 }],
+      dryRun: false,
+      confirmationToken: partialToken,
+      idempotencyKey: "idem-split-order-1",
+    });
+    expect((partial.model as any).data.status).toBe("committed");
+    expect((partial.model as any).data.order.fullyConverted).toBe(false);
+    expect((partial.model as any).data.order.remainingQuantity).toBe(3);
+    expect(db.select().from(quoteLines).where(eq(quoteLines.id, line.id)).get()!.convertedQuantity).toBe(2);
+    expect(db.select().from(quotes).where(eq(quotes.id, quoteId)).get()!.status).toBe("approved");
+    const partialOpportunity = db.select().from(opportunities).where(eq(opportunities.id, "o_huachen_server")).get()!;
+    expect(partialOpportunity.stage).toBe("negotiation");
+    expect(partialOpportunity.nextAction).toContain("剩余 3 件");
+
+    const remainderPreview = await executeTool(tool("convert_quote_to_order"), ctx, { quoteId, dryRun: true });
+    expect((remainderPreview.model as any).data.preview.lines[0]).toMatchObject({ convertingQuantity: 3, remainingAfter: 0 });
+    const remainderToken = events.filter((event) => event.type === "artifact").at(-1)!.payload.confirmationToken;
+    const remainder = await executeTool(tool("convert_quote_to_order"), ctx, {
+      quoteId,
+      dryRun: false,
+      confirmationToken: remainderToken,
+      idempotencyKey: "idem-split-order-2",
+    });
+    expect((remainder.model as any).data.order.fullyConverted).toBe(true);
+    expect(db.select().from(quoteLines).where(eq(quoteLines.id, line.id)).get()!.convertedQuantity).toBe(5);
+    expect(db.select().from(quotes).where(eq(quotes.id, quoteId)).get()!.status).toBe("converted");
+    expect(db.select().from(opportunities).where(eq(opportunities.id, "o_huachen_server")).get()!.stage).toBe("won");
+
+    const ordersForQuote = db.select().from(orders).where(eq(orders.quoteId, quoteId)).all();
+    expect(ordersForQuote).toHaveLength(2);
+    expect(ordersForQuote.reduce((sum, order) => sum + order.totalCents, 0)).toBe(quote.totalCents);
+  });
+
+  it("creates a partial order after manager approval when the selected amount exceeds credit", async () => {
+    const { ctx, events, db } = setup();
+    const preview = await executeTool(tool("create_quote"), ctx, {
+      customerId: "c_huachen",
+      contactId: "ct_zhang_1",
+      lines: [{ sku: "X1", quantity: 120 }],
+      dryRun: true,
+    });
+    const quoteToken = events.find((event) => event.type === "artifact").payload.confirmationToken;
+    const committed = await executeTool(tool("create_quote"), ctx, {
+      customerId: "c_huachen",
+      contactId: "ct_zhang_1",
+      lines: [{ sku: "X1", quantity: 120 }],
+      dryRun: false,
+      confirmationToken: quoteToken,
+      idempotencyKey: "idem-split-approval-quote",
+    });
+    const quoteId = (committed.model as any).data.quote.id as string;
+    const quote = db.select().from(quotes).where(eq(quotes.id, quoteId)).get()!;
+    const line = db.select().from(quoteLines).where(eq(quoteLines.quoteId, quoteId)).get()!;
+
+    const partialPreview = await executeTool(tool("convert_quote_to_order"), ctx, {
+      quoteId,
+      lines: [{ quoteLineId: line.id, quantity: 20 }],
+      dryRun: true,
+    });
+    expect((partialPreview.model as any).data.preview.requiresApproval).toBe(true);
+    const token = events.filter((event) => event.type === "artifact").at(-1)!.payload.confirmationToken;
+    const pending = await executeTool(tool("convert_quote_to_order"), ctx, {
+      quoteId,
+      lines: [{ quoteLineId: line.id, quantity: 20 }],
+      dryRun: false,
+      confirmationToken: token,
+      idempotencyKey: "idem-split-approval-convert",
+    });
+    expect((pending.model as any).data.status).toBe("pending_approval");
+    const approvalId = (pending.model as any).data.approvalId as string;
+    expect(db.select().from(orders).where(eq(orders.quoteId, quoteId)).all()).toHaveLength(0);
+
+    decideApproval({ ...ctx, actor: manager }, approvalId, "approve", "同意分批", "idem-split-approval-decide");
+    const ordersForQuote = db.select().from(orders).where(eq(orders.quoteId, quoteId)).all();
+    expect(ordersForQuote).toHaveLength(1);
+    expect(ordersForQuote[0].totalCents).toBeLessThan(quote.totalCents);
+    expect(db.select().from(quoteLines).where(eq(quoteLines.id, line.id)).get()!.convertedQuantity).toBe(20);
+    expect(db.select().from(quotes).where(eq(quotes.id, quoteId)).get()!.status).toBe("approved");
+  });
+
+  it("rejects a split conversion quantity above the remaining amount", async () => {
+    const { ctx, events, db } = setup();
+    await executeTool(tool("create_quote"), ctx, {
+      customerId: "c_huachen",
+      contactId: "ct_zhang_1",
+      lines: [{ sku: "X1", quantity: 3 }],
+      dryRun: true,
+    });
+    const quoteToken = events.find((event) => event.type === "artifact").payload.confirmationToken;
+    const committed = await executeTool(tool("create_quote"), ctx, {
+      customerId: "c_huachen",
+      contactId: "ct_zhang_1",
+      lines: [{ sku: "X1", quantity: 3 }],
+      dryRun: false,
+      confirmationToken: quoteToken,
+      idempotencyKey: "idem-split-invalid-quote",
+    });
+    const quoteId = (committed.model as any).data.quote.id as string;
+    const line = db.select().from(quoteLines).where(eq(quoteLines.quoteId, quoteId)).get()!;
+    const result = await executeTool(tool("convert_quote_to_order"), ctx, {
+      quoteId,
+      lines: [{ quoteLineId: line.id, quantity: 4 }],
+      dryRun: true,
+    });
+    expect(result.model.ok).toBe(false);
+    if (!result.model.ok) {
+      expect(result.model.error.code).toBe("VALIDATION_ERROR");
+      expect(result.model.error.message).toContain("剩余 3 件");
+    }
   });
 
   it("generates briefing alerts for manager", async () => {

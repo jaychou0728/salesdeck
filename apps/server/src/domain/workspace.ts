@@ -256,7 +256,7 @@ function buildTodos(
       const targetCustomer =
         row.targetType === "customer" ? db.select().from(customers).where(eq(customers.id, row.targetId)).get() : undefined;
       const customer = quote ? db.select().from(customers).where(eq(customers.id, quote.customerId)).get() : targetCustomer;
-      const payload = JSON.parse(row.payloadJson) as { requestedLimitCents?: number };
+      const payload = JSON.parse(row.payloadJson) as { requestedLimitCents?: number; amountCents?: number };
       return {
         id: `approval_${row.id}`,
         kind: "approval" as const,
@@ -265,7 +265,7 @@ function buildTodos(
           : "待审批",
         subtitle: row.reason,
         customerId: customer?.id,
-        amountCents: quote?.totalCents ?? payload.requestedLimitCents,
+        amountCents: payload.amountCents ?? quote?.totalCents ?? payload.requestedLimitCents,
         severity: "blocker" as const,
         href: actor.role === "manager" ? "/approvals" : quote ? `/quotes/${quote.id}` : customer ? `/customers/${customer.id}` : "/dashboard",
       };

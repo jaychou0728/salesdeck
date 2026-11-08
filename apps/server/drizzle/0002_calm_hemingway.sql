@@ -1,0 +1,1 @@
+ALTER TABLE `quote_lines` ADD `converted_quantity` integer DEFAULT 0 NOT NULL;

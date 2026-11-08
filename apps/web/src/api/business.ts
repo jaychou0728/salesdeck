@@ -231,9 +231,16 @@ export interface QuoteLineRow {
   unitPriceCents: number;
   discountRateBps: number;
   lineTotalCents: number;
+  convertedQuantity: number;
   warehouseId: string | null;
   productName: string | null;
   sku: string | null;
+}
+
+export interface ConvertPreviewLine extends QuoteLineRow {
+  remainingQuantity: number;
+  convertingQuantity: number;
+  remainingAfter: number;
 }
 
 export interface OrderLineRow {
@@ -527,12 +534,15 @@ export interface QuoteCommitResponse {
 export interface ConvertPreview {
   quoteId: string;
   quoteNo: string;
+  /** Amount of this conversion (selected quantities only). */
   totalCents: number;
+  quoteTotalCents: number;
   creditAvailableCents: number;
   requiresApproval: boolean;
   reason: string | null;
-  lines: QuoteLineRow[];
+  lines: ConvertPreviewLine[];
   stockChecks: Array<{
+    quoteLineId: string;
     productId: string;
     quantity: number;
     canFulfill: boolean;
@@ -540,6 +550,8 @@ export interface ConvertPreview {
     allocations: Array<{ warehouseId: string; warehouseName?: string; quantity: number }>;
   }>;
   canFulfill: boolean;
+  partiallyConverted: boolean;
+  fullyConvertedAfter: boolean;
 }
 
 export interface ConvertPreviewResponse {
@@ -552,7 +564,7 @@ export interface ConvertCommitResponse {
   data: {
     status: "committed" | "pending_approval";
     approvalId?: string;
-    order?: OrderRow;
+    order?: OrderRow & { fullyConverted?: boolean; remainingQuantity?: number };
     preview?: ConvertPreview;
     replayed?: boolean;
   };

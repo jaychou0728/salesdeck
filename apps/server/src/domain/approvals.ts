@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { AppError } from "@salespilot/shared";
+import { AppError, type ConversionLineSelection } from "@salespilot/shared";
 import { approvals, customers, opportunities, quotes, users } from "../db/schema.js";
 import { assertManager } from "./permissions.js";
 import { withIdempotency } from "./idempotency.js";
@@ -90,8 +90,18 @@ export function decideApproval(
           return { status: "approved" };
         }
         if (decision === "approve" && approval.type === "order_conversion") {
-          const payload = JSON.parse(approval.payloadJson) as { quoteId: string; paymentTerms: string };
-          return { status: "approved", order: createOrderFromQuote(ctx, payload.quoteId, payload.paymentTerms, { allowOverCredit: true }) };
+          const payload = JSON.parse(approval.payloadJson) as {
+            quoteId: string;
+            paymentTerms: string;
+            lines?: ConversionLineSelection[] | null;
+          };
+          return {
+            status: "approved",
+            order: createOrderFromQuote(ctx, payload.quoteId, payload.paymentTerms, {
+              allowOverCredit: true,
+              lines: payload.lines ?? undefined,
+            }),
+          };
         }
         if (approval.type === "credit_limit") {
           const payload = JSON.parse(approval.payloadJson) as { customerId: string; requestedLimitCents: number };

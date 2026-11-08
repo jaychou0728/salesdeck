@@ -138,6 +138,7 @@ export const quoteLines = sqliteTable("quote_lines", {
   unitPriceCents: integer("unit_price_cents").notNull(),
   discountRateBps: integer("discount_rate_bps").notNull().default(0),
   lineTotalCents: integer("line_total_cents").notNull(),
+  convertedQuantity: integer("converted_quantity").notNull().default(0),
   warehouseId: text("warehouse_id"),
 });
 

@@ -98,6 +98,8 @@ describe("database schema", () => {
 
     expect(columnInfo(sqlite, "customers", "credit_used_cents").dflt_value).toBe("0");
     expect(columnInfo(sqlite, "products", "tax_rate_bps").dflt_value).toBe("1300");
+    expect(columnInfo(sqlite, "quote_lines", "converted_quantity").dflt_value).toBe("0");
+    expect(columnInfo(sqlite, "quote_lines", "converted_quantity").notnull).toBe(1);
   });
 
   it("adds opportunity linkage and monthly targets", () => {

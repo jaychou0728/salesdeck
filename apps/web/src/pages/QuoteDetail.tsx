@@ -36,6 +36,8 @@ export function QuoteDetail() {
   const role = useRole();
   const { data, loading, error, refetch } = useApi<QuoteDetailResponse>(id ? `/api/business/quotes/${id}` : null);
 
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [convertSelections, setConvertSelections] = useState<Record<string, number>>({});
   const [convertPreview, setConvertPreview] = useState<ConvertPreviewResponse | null>(null);
   const [convertLoading, setConvertLoading] = useState(false);
   const [convertCommitting, setConvertCommitting] = useState(false);
@@ -56,16 +58,62 @@ export function QuoteDetail() {
   }
   const riskFlags = parseRiskFlags(quote.riskFlags);
   const canConvert = quote.status === "approved";
+  const totalQuoted = lines.reduce((sum, line) => sum + line.quantity, 0);
+  const totalConverted = lines.reduce((sum, line) => sum + line.convertedQuantity, 0);
+  const partiallyConverted = quote.status !== "converted" && totalConverted > 0;
+  const selectedPreviewLines = convertPreview
+    ? convertPreview.preview.lines.filter((line) => line.convertingQuantity > 0)
+    : [];
+  const remainingAfter = convertPreview
+    ? convertPreview.preview.lines.reduce((sum, line) => sum + Math.max(0, line.remainingAfter), 0)
+    : 0;
 
-  async function openConvert() {
+  function closeConvert() {
+    setConvertOpen(false);
+    setConvertPreview(null);
+    setConvertError(null);
+  }
+
+  function openConvert() {
     if (!id) return;
+    setConvertPreview(null);
+    setConvertError(null);
+    setConvertSelections(
+      Object.fromEntries(
+        lines
+          .filter((line) => line.quantity > line.convertedQuantity)
+          .map((line) => [line.id, line.quantity - line.convertedQuantity]),
+      ),
+    );
+    setConvertOpen(true);
+  }
+
+  async function previewConvert() {
+    if (!id) return;
+    const selected = lines
+      .map((line) => ({ quoteLineId: line.id, quantity: convertSelections[line.id] ?? 0 }))
+      .filter((line) => line.quantity > 0);
+    if (selected.length === 0) {
+      setConvertError("请至少选择一条明细并填写转单数量");
+      return;
+    }
+    const overLimit = selected.find((row) => {
+      const line = lines.find((item) => item.id === row.quoteLineId)!;
+      return row.quantity > line.quantity - line.convertedQuantity;
+    });
+    if (overLimit) {
+      setConvertError("转单数量不能超过剩余可转数量");
+      return;
+    }
     setConvertLoading(true);
     setConvertError(null);
     try {
-      const result = await apiPost<ConvertPreviewResponse>(`/api/business/quotes/${id}/convert-preview`);
+      const result = await apiPost<ConvertPreviewResponse>(`/api/business/quotes/${id}/convert-preview`, {
+        lines: selected,
+      });
       setConvertPreview(result);
     } catch (caught) {
-      pushToast(errorMessage(caught), "error");
+      setConvertError(errorMessage(caught));
     } finally {
       setConvertLoading(false);
     }
@@ -82,14 +130,22 @@ export function QuoteDetail() {
         idempotencyKey: crypto.randomUUID(),
       });
       bumpData();
-      setConvertPreview(null);
       if (result.data.status === "pending_approval") {
+        closeConvert();
         setNotice("已提交经理审批，审批通过后自动创建订单。");
         pushToast("信用不足，已提交经理审批", "info");
         refetch();
       } else if (result.data.order) {
-        pushToast(`订单 ${result.data.order.orderNo} 已创建`, "success");
-        navigate(`/orders/${result.data.order.id}`);
+        const order = result.data.order;
+        if (order.fullyConverted === false) {
+          closeConvert();
+          pushToast(`订单 ${order.orderNo} 已创建，剩余数量可继续转单`, "success");
+          refetch();
+        } else {
+          closeConvert();
+          pushToast(`订单 ${order.orderNo} 已创建`, "success");
+          navigate(`/orders/${order.id}`);
+        }
       }
     } catch (caught) {
       setConvertError(errorMessage(caught));
@@ -121,6 +177,7 @@ export function QuoteDetail() {
             <FileText size={18} className="text-slate-400" />
             <span data-testid="quote-no">{quote.quoteNo}</span>
             <Badge tone={statusTone(quote.status)}>{statusLabel(quote.status)}</Badge>
+            {partiallyConverted ? <Badge tone="info">部分转单</Badge> : null}
             {approval?.type === "order_conversion" && approval.status === "rejected" ? (
               <Badge tone="danger">转单被驳回</Badge>
             ) : null}
@@ -206,29 +263,41 @@ export function QuoteDetail() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
-          <CardHeader title="报价明细" description={`有效期至 ${formatDate(quote.validUntil)}`} />
+          <CardHeader
+            title="报价明细"
+            description={`有效期至 ${formatDate(quote.validUntil)}${totalConverted > 0 ? ` · 已转 ${totalConverted}/${totalQuoted} 件` : ""}`}
+          />
           <div className="p-3">
             <Table>
               <THead>
                 <TR>
                   <TH>SKU / 产品</TH>
                   <TH className="text-right">数量</TH>
+                  <TH className="text-right">已转 / 剩余</TH>
                   <TH className="text-right">单价</TH>
                   <TH className="text-right">小计</TH>
                 </TR>
               </THead>
               <TBody>
-                {lines.map((line) => (
-                  <TR key={line.id}>
-                    <TD>
-                      <div className="font-medium text-slate-800">{line.sku ?? line.productId}</div>
-                      <div className="text-[11px] text-slate-400">{line.productName}</div>
-                    </TD>
-                    <TD className="text-right tabular-nums">{line.quantity}</TD>
-                    <TD className="text-right tabular-nums">{formatMoney(line.unitPriceCents)}</TD>
-                    <TD className="text-right tabular-nums">{formatMoney(line.lineTotalCents)}</TD>
-                  </TR>
-                ))}
+                {lines.map((line) => {
+                  const remaining = line.quantity - line.convertedQuantity;
+                  return (
+                    <TR key={line.id}>
+                      <TD>
+                        <div className="font-medium text-slate-800">{line.sku ?? line.productId}</div>
+                        <div className="text-[11px] text-slate-400">{line.productName}</div>
+                      </TD>
+                      <TD className="text-right tabular-nums">{line.quantity}</TD>
+                      <TD className="text-right tabular-nums">
+                        <span className={line.convertedQuantity > 0 ? "text-teal-700" : "text-slate-400"}>{line.convertedQuantity}</span>
+                        <span className="text-slate-300"> / </span>
+                        <span className={remaining > 0 ? "text-slate-700" : "text-slate-400"}>{remaining}</span>
+                      </TD>
+                      <TD className="text-right tabular-nums">{formatMoney(line.unitPriceCents)}</TD>
+                      <TD className="text-right tabular-nums">{formatMoney(line.lineTotalCents)}</TD>
+                    </TR>
+                  );
+                })}
               </TBody>
             </Table>
           </div>
@@ -311,28 +380,70 @@ export function QuoteDetail() {
       </Card>
 
       <Modal
-        open={Boolean(convertPreview)}
-        onClose={() => setConvertPreview(null)}
-        title="转订单预览"
-        description="确认后会占用库存与信用额度；信用不足时将转为经理审批。"
+        open={convertOpen}
+        onClose={closeConvert}
+        title={convertPreview ? "转订单预览" : "选择转单明细"}
+        description={
+          convertPreview
+            ? "确认后会占用对应库存与信用额度；信用不足时将转为经理审批。"
+            : "按明细填写本次转单数量。未转数量保留在报价中，之后可继续转单。"
+        }
         width="lg"
         footer={
-          <>
-            <Button variant="secondary" size="sm" onClick={() => setConvertPreview(null)}>取消</Button>
-            <Button size="sm" onClick={confirmConvert} disabled={convertCommitting}>
-              {convertCommitting ? "提交中…" : "确认提交"}
-            </Button>
-          </>
+          convertPreview ? (
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setConvertPreview(null)}>返回修改</Button>
+              <Button size="sm" onClick={confirmConvert} disabled={convertCommitting}>
+                {convertCommitting ? "提交中…" : "确认提交"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="secondary" size="sm" onClick={closeConvert}>取消</Button>
+              <Button size="sm" onClick={previewConvert} disabled={convertLoading}>
+                {convertLoading ? "准备中…" : "生成预览"}
+              </Button>
+            </>
+          )
         }
       >
         {convertPreview ? (
           <div className="space-y-3 text-xs">
             <div className="grid grid-cols-2 gap-2">
               <Info label="报价单" value={convertPreview.preview.quoteNo} />
-              <Info label="订单金额" value={formatMoney(convertPreview.preview.totalCents)} />
+              <Info label="本次转单金额" value={formatMoney(convertPreview.preview.totalCents)} />
+              <Info label="报价总额" value={formatMoney(convertPreview.preview.quoteTotalCents ?? quote.totalCents)} />
               <Info label="信用可用" value={formatMoney(convertPreview.preview.creditAvailableCents)} />
-              <Info label="库存可满足" value={convertPreview.preview.canFulfill ? "是" : "否"} />
             </div>
+
+            <div>
+              <div className="mb-1 font-medium text-slate-700">本次转单明细</div>
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>SKU / 产品</TH>
+                    <TH className="text-right">本次转单</TH>
+                    <TH className="text-right">转后剩余</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {selectedPreviewLines.map((line) => (
+                    <TR key={line.id}>
+                      <TD>
+                        <div className="font-medium text-slate-800">{line.sku ?? line.productId}</div>
+                        <div className="text-[11px] text-slate-400">{line.productName}</div>
+                      </TD>
+                      <TD className="text-right tabular-nums">{line.convertingQuantity}</TD>
+                      <TD className="text-right tabular-nums">{Math.max(0, line.remainingAfter)}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
+              <div className="mt-2 text-[11px] text-slate-500">
+                {remainingAfter > 0 ? `本次转单后仍剩余 ${remainingAfter} 件，可稍后继续转单。` : "本次转单后报价将全部转为订单。"}
+              </div>
+            </div>
+
             {convertPreview.preview.requiresApproval ? (
               <div className="rounded-lg bg-amber-50 p-2 text-amber-700">
                 {convertPreview.preview.reason ?? "信用额度不足"}，提交后将进入经理审批。
@@ -340,11 +451,12 @@ export function QuoteDetail() {
             ) : (
               <div className="rounded-lg bg-emerald-50 p-2 text-emerald-700">信用与库存检查通过，提交后立即创建订单。</div>
             )}
+
             <div>
               <div className="mb-1 font-medium text-slate-700">库存分配检查</div>
               <div className="space-y-1">
                 {convertPreview.preview.stockChecks.map((check) => (
-                  <div key={check.productId} className="flex items-center justify-between rounded-lg bg-slate-50 px-2 py-1.5">
+                  <div key={check.quoteLineId ?? check.productId} className="flex items-center justify-between rounded-lg bg-slate-50 px-2 py-1.5">
                     <span>{check.productId}</span>
                     <span>
                       需求 {check.quantity} · {check.canFulfill ? <span className="text-emerald-700">可满足</span> : <span className="text-rose-600">缺 {check.missing}</span>}
@@ -355,7 +467,56 @@ export function QuoteDetail() {
             </div>
             {convertError ? <div className="rounded-lg bg-rose-50 p-2 text-rose-700">{convertError}</div> : null}
           </div>
-        ) : null}
+        ) : (
+          <div className="space-y-3 text-xs">
+            <Table>
+              <THead>
+                <TR>
+                  <TH>SKU / 产品</TH>
+                  <TH className="text-right">报价数量</TH>
+                  <TH className="text-right">已转</TH>
+                  <TH className="text-right">剩余可转</TH>
+                  <TH className="text-right">本次转单</TH>
+                </TR>
+              </THead>
+              <TBody>
+                {lines.map((line) => {
+                  const remaining = line.quantity - line.convertedQuantity;
+                  return (
+                    <TR key={line.id}>
+                      <TD>
+                        <div className="font-medium text-slate-800">{line.sku ?? line.productId}</div>
+                        <div className="text-[11px] text-slate-400">{line.productName}</div>
+                      </TD>
+                      <TD className="text-right tabular-nums">{line.quantity}</TD>
+                      <TD className="text-right tabular-nums">{line.convertedQuantity}</TD>
+                      <TD className="text-right tabular-nums">{remaining}</TD>
+                      <TD className="text-right">
+                        {remaining > 0 ? (
+                          <input
+                            type="number"
+                            min={0}
+                            max={remaining}
+                            value={convertSelections[line.id] ?? 0}
+                            aria-label={`${line.sku ?? line.productName} 本次转单数量`}
+                            onChange={(event) => {
+                              const next = Math.max(0, Math.min(remaining, Number(event.target.value) || 0));
+                              setConvertSelections((prev) => ({ ...prev, [line.id]: next }));
+                            }}
+                            className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-right text-xs focus:border-teal-500 focus:outline-none"
+                          />
+                        ) : (
+                          <span className="text-slate-400">已全部转单</span>
+                        )}
+                      </TD>
+                    </TR>
+                  );
+                })}
+              </TBody>
+            </Table>
+            {convertError ? <div className="rounded-lg bg-rose-50 p-2 text-rose-700">{convertError}</div> : null}
+          </div>
+        )}
       </Modal>
 
       <FollowUpModal

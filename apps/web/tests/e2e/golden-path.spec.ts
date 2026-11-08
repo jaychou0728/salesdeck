@@ -55,6 +55,40 @@ test("manual quote can be previewed and committed", async ({ page }) => {
   await expect(page.getByLabel("数量").first()).toHaveValue("2");
 });
 
+test("a quote can be converted in two partial orders", async ({ page }) => {
+  await page.goto("/quotes/new");
+  await page.getByLabel("客户").selectOption("c_huachen");
+  await page.getByLabel("联系人").selectOption("ct_zhang_1");
+  await page.getByLabel("产品").first().selectOption("X1");
+  await page.getByLabel("数量").first().fill("5");
+  await page.getByRole("button", { name: "预览" }).click();
+  await expect(page.getByRole("button", { name: "确认生成" })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "确认生成" }).click();
+  await expect(page).toHaveURL(/\/quotes\/q_/, { timeout: 30_000 });
+  const quoteUrl = page.url();
+
+  await page.getByRole("button", { name: "转订单" }).click();
+  await expect(page.getByText("选择转单明细")).toBeVisible();
+  await page.getByLabel(/本次转单数量/).fill("2");
+  await page.getByRole("button", { name: "生成预览" }).click();
+  await expect(page.getByText("转订单预览")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("本次转单后仍剩余 3 件", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "确认提交" }).click();
+  await expect(page.getByText("剩余数量可继续转单", { exact: false })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("部分转单")).toBeVisible();
+
+  await page.getByRole("button", { name: "转订单" }).click();
+  await expect(page.getByLabel(/本次转单数量/)).toHaveValue("3");
+  await page.getByRole("button", { name: "生成预览" }).click();
+  await expect(page.getByText("本次转单后报价将全部转为订单。")).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "确认提交" }).click();
+  await expect(page).toHaveURL(/\/orders\//, { timeout: 30_000 });
+
+  await page.goto(quoteUrl);
+  await expect(page.getByTestId("quote-no")).toBeVisible();
+  await expect(page.getByText("已转订单", { exact: true })).toBeVisible();
+});
+
 test("role switch enforces approval and inventory permissions", async ({ page }) => {
   await page.goto("/dashboard");
   await expect(page.getByTestId("nav-approvals")).toHaveCount(0);
