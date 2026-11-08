@@ -61,9 +61,16 @@ export const CreateQuoteInput = z
   });
 export type CreateQuoteInput = z.infer<typeof CreateQuoteInput>;
 
+export const ConversionLineSelection = z.object({
+  quoteLineId: z.string().min(1),
+  quantity,
+});
+export type ConversionLineSelection = z.infer<typeof ConversionLineSelection>;
+
 export const ConvertQuoteToOrderInput = z
   .object({
     quoteId: z.string().min(1),
+    lines: z.array(ConversionLineSelection).min(1).max(50).optional(),
     paymentTerms: z.string().max(50).optional(),
     dryRun: z.boolean(),
     confirmationToken: z.string().min(10).optional(),
