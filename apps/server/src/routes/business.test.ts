@@ -410,6 +410,36 @@ describe("business workspace", () => {
     expect(managerTraces.json().traces.some((row: { id: string }) => row.id === traceRows[0].id)).toBe(true);
   });
 
+  it("keeps the quote approved while showing an order-conversion rejection", async () => {
+    const { app } = setup();
+    const quoteId = await createQuoteViaApi(app, 120);
+    const preview = await app.inject({
+      method: "POST",
+      url: `/api/business/quotes/${quoteId}/convert-preview`,
+      headers: as("u_sales_lin"),
+    });
+    const previewBody = preview.json();
+    const convert = await app.inject({
+      method: "POST",
+      url: `/api/business/quotes/${quoteId}/convert`,
+      headers: as("u_sales_lin"),
+      payload: { token: previewBody.confirmationToken, payload: previewBody.input, idempotencyKey: "idem-reject-list-1" },
+    });
+    const approvalId = convert.json().data.approvalId as string;
+    await app.inject({
+      method: "POST",
+      url: `/api/approvals/${approvalId}/decide`,
+      headers: as("u_manager_wang"),
+      payload: { decision: "reject", comment: "信用不足", idempotencyKey: "idem-reject-list-2" },
+    });
+
+    const list = await app.inject({ method: "GET", url: "/api/business/quotes", headers: as("u_sales_lin") });
+    const row = list.json().quotes.find((quote: { id: string }) => quote.id === quoteId);
+    expect(row.status).toBe("approved");
+    expect(row.approvalStatus).toBe("rejected");
+    expect(row.approvalType).toBe("order_conversion");
+  });
+
   it("returns opportunities, follow-ups and assessment in customer detail", async () => {
     const { app } = setup();
     const response = await app.inject({ method: "GET", url: "/api/business/customers/c_huachen", headers: as("u_sales_lin") });

@@ -69,7 +69,14 @@ export interface WorkspaceData {
   todos: WorkspaceTodoGroups;
   risks: PriorityItem[];
   ranking?: SalesRankingRow[];
-  recentQuotes: Array<typeof quotes.$inferSelect & { customerName: string | null; ownerName: string | null }>;
+  recentQuotes: Array<
+    typeof quotes.$inferSelect & {
+      customerName: string | null;
+      ownerName: string | null;
+      approvalStatus: string | null;
+      approvalType: string | null;
+    }
+  >;
   recentOrders: Array<typeof orders.$inferSelect & { customerName: string | null; ownerName: string | null }>;
 }
 
@@ -445,7 +452,16 @@ export function buildWorkspace(
     .where(inArray(quotes.ownerId, ownerIds))
     .orderBy(desc(quotes.createdAt))
     .limit(5)
-    .all();
+    .all()
+    .map((row) => {
+      const approval = db
+        .select()
+        .from(approvals)
+        .where(and(eq(approvals.targetType, "quote"), eq(approvals.targetId, row.id)))
+        .orderBy(desc(approvals.createdAt))
+        .get();
+      return { ...row, approvalStatus: approval?.status ?? null, approvalType: approval?.type ?? null };
+    });
   const recentOrders = db
     .select({ ...getTableColumns(orders), customerName: customers.name, ownerName: users.name })
     .from(orders)

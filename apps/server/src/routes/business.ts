@@ -655,7 +655,16 @@ export function registerBusiness(app: FastifyInstance, deps: { db: Db; sqlite: D
           .where(and(...conditions))
           .orderBy(desc(quotes.createdAt))
           .limit(50)
-          .all();
+          .all()
+          .map((row) => {
+            const approval = deps.db
+              .select()
+              .from(approvals)
+              .where(and(eq(approvals.targetType, "quote"), eq(approvals.targetId, row.id)))
+              .orderBy(desc(approvals.createdAt))
+              .get();
+            return { ...row, approvalStatus: approval?.status ?? null, approvalType: approval?.type ?? null };
+          });
         return { ok: true, quotes: rows };
       }),
     );

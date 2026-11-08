@@ -186,7 +186,14 @@ export function Dashboard() {
                         <TR key={quote.id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate(`/quotes/${quote.id}`)}>
                           <TD className="font-medium text-slate-800">{quote.quoteNo}</TD>
                           <TD>{quote.customerName ?? "—"}</TD>
-                          <TD><Badge tone={statusTone(quote.status)}>{statusLabel(quote.status)}</Badge></TD>
+                          <TD>
+                            <Badge tone={statusTone(quote.status)}>{statusLabel(quote.status)}</Badge>
+                            {quote.approvalStatus === "rejected" ? (
+                              <Badge tone="danger" className="ml-1">
+                                {quote.approvalType === "order_conversion" ? "转单被驳回" : "审批驳回"}
+                              </Badge>
+                            ) : null}
+                          </TD>
                           <TD className="text-right tabular-nums">{formatMoney(quote.totalCents)}</TD>
                         </TR>
                       ))}

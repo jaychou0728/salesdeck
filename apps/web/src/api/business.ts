@@ -187,6 +187,8 @@ export interface QuoteRow {
   createdAt: number;
   customerName: string | null;
   ownerName: string | null;
+  approvalStatus?: string | null;
+  approvalType?: string | null;
 }
 
 export interface OrderRow {

@@ -84,6 +84,9 @@ test("manager rejection clears the sales approval card and updates the next acti
   await expect(page.getByText("经理审批", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "关闭 AI 助手" }).click();
   await expect(page.getByText("转订单审批被驳回", { exact: false }).first()).toBeVisible({ timeout: 15_000 });
+
+  await page.getByTestId("nav-quotes").click();
+  await expect(page.getByText("转单被驳回").first()).toBeVisible({ timeout: 15_000 });
 });
 
 test("reset demo asks for confirmation", async ({ page }) => {

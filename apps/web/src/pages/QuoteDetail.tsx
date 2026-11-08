@@ -117,6 +117,10 @@ export function QuoteDetail() {
             <FileText size={18} className="text-slate-400" />
             <span data-testid="quote-no">{quote.quoteNo}</span>
             <Badge tone={statusTone(quote.status)}>{statusLabel(quote.status)}</Badge>
+            {approval?.type === "order_conversion" && approval.status === "rejected" ? (
+              <Badge tone="danger">转单被驳回</Badge>
+            ) : null}
+            {approval?.status === "pending" ? <Badge tone="warning">审批中</Badge> : null}
           </span>
         }
         description={
@@ -149,6 +153,12 @@ export function QuoteDetail() {
           <Link to={`/opportunities/${quote.opportunityId}`} className="font-medium text-teal-700 hover:underline">
             查看商机
           </Link>
+        </div>
+      ) : null}
+
+      {approval?.type === "order_conversion" && approval.status === "rejected" ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-700">
+          转订单申请已被经理驳回：{approval.comment || approval.reason}。报价本身仍有效，请调整信用或付款方案后重新提交。
         </div>
       ) : null}
 

@@ -57,25 +57,39 @@ export function Quotes() {
                 <TH>客户</TH>
                 <TH>负责人</TH>
                 <TH>状态</TH>
+                <TH>审批</TH>
                 <TH className="text-right">金额</TH>
                 <TH>有效期至</TH>
               </TR>
             </THead>
             <TBody>
-              {data.quotes.map((quote) => (
-                <TR key={quote.id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate(`/quotes/${quote.id}`)}>
-                  <TD className="font-medium text-slate-800">{quote.quoteNo}</TD>
-                  <TD>{quote.customerName ?? quote.customerId}</TD>
-                  <TD>{quote.ownerName ?? quote.ownerId}</TD>
-                  <TD><Badge tone={statusTone(quote.status)}>{statusLabel(quote.status)}</Badge></TD>
-                  <TD className="text-right tabular-nums">{formatMoney(quote.totalCents)}</TD>
-                  <TD>{formatDate(quote.validUntil)}</TD>
-                </TR>
-              ))}
+              {data.quotes.map((quote) => {
+                const approval = approvalBadge(quote.approvalStatus, quote.approvalType);
+                return (
+                  <TR key={quote.id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate(`/quotes/${quote.id}`)}>
+                    <TD className="font-medium text-slate-800">{quote.quoteNo}</TD>
+                    <TD>{quote.customerName ?? quote.customerId}</TD>
+                    <TD>{quote.ownerName ?? quote.ownerId}</TD>
+                    <TD><Badge tone={statusTone(quote.status)}>{statusLabel(quote.status)}</Badge></TD>
+                    <TD>{approval ? <Badge tone={approval.tone}>{approval.label}</Badge> : <span className="text-slate-400">—</span>}</TD>
+                    <TD className="text-right tabular-nums">{formatMoney(quote.totalCents)}</TD>
+                    <TD>{formatDate(quote.validUntil)}</TD>
+                  </TR>
+                );
+              })}
             </TBody>
           </Table>
         )
       ) : null}
     </div>
   );
+}
+
+function approvalBadge(status?: string | null, type?: string | null) {
+  if (!status) return null;
+  if (status === "rejected") {
+    return { label: type === "order_conversion" ? "转单被驳回" : "审批驳回", tone: "danger" as const };
+  }
+  if (status === "pending") return { label: "审批中", tone: "warning" as const };
+  return { label: "审批通过", tone: "success" as const };
 }
