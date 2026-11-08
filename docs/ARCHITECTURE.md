@@ -172,6 +172,6 @@ type ToolResult<T> =
 
 ## 11. 质量证据
 
-- Vitest：shared 14 个测试 + 服务端 117 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、优先级引擎、workspace 聚合、商机/跟进、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
-- Playwright：7 条端到端测试（含作战室、客户跟进、经理视图与 AI 推进）。
+- Vitest：shared 14 个测试 + 服务端 123 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、优先级引擎、workspace 聚合、商机/跟进、审批驳回、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
+- Playwright：8 条端到端测试（含作战室、客户跟进、经理视图、AI 推进与审批驳回）。
 - Agent 评测：30 条 golden cases，当前通过率 100%（见 `docs/EVAL_REPORT.md`）。

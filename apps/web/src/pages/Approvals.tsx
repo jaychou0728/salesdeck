@@ -29,7 +29,7 @@ const TYPE_LABEL: Record<string, string> = {
 export function Approvals() {
   const role = useRole();
   const navigate = useNavigate();
-  const { bumpData, pushToast } = useAppStore();
+  const { bumpData, pushToast, pendingApprovalId, setPendingApproval } = useAppStore();
   const [tab, setTab] = useState<"pending" | "all">("pending");
   const [selected, setSelected] = useState<ApprovalRow | null>(null);
   const [comment, setComment] = useState("");
@@ -70,6 +70,7 @@ export function Approvals() {
       if (decision === "reject") pushToast("审批已驳回", "info");
       else if (result.data.order) pushToast(`已批准，订单 ${result.data.order.orderNo} 已创建`, "success");
       else pushToast("审批已通过", "success");
+      if (selected.id === pendingApprovalId) setPendingApproval(undefined);
       bumpData();
       setSelected(null);
       setComment("");

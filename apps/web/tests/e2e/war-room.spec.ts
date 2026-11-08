@@ -45,3 +45,32 @@ test("AI promotes a customer with tool calls", async ({ page }) => {
   await page.getByRole("tab", { name: "执行过程" }).click();
   await expect(page.getByText("get_opportunity_detail").first()).toBeVisible();
 });
+
+test("manager rejection clears the sales approval card and updates the next action", async ({ page }) => {
+  await page.goto("/dashboard");
+  await page.getByRole("button", { name: "AI 助手" }).click();
+  await page.getByPlaceholder("告诉我要做什么…").fill("给华辰设计的张总报 120 台 X1");
+  await page.getByRole("button", { name: "发送" }).click();
+  await expect(page.getByText("报价单预览")).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "确认生成" }).click();
+  await expect(page.getByText("报价已生成")).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "转订单" }).click();
+  await expect(page.getByText("转订单预览")).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "确认提交" }).click();
+  await expect(page.getByText("经理审批", { exact: true })).toBeVisible({ timeout: 30_000 });
+
+  await page.getByRole("combobox", { name: "切换角色" }).selectOption("u_manager_wang");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.getByRole("button", { name: "关闭 AI 助手" }).click();
+  await page.getByTestId("nav-approvals").click();
+  await page.getByText("转订单审批").first().click();
+  await page.getByRole("button", { name: "驳回" }).click();
+  await expect(page.getByText("审批已驳回")).toBeVisible({ timeout: 15_000 });
+
+  await page.getByRole("combobox", { name: "切换角色" }).selectOption("u_sales_lin");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.getByRole("button", { name: "AI 助手" }).click();
+  await expect(page.getByText("经理审批", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "关闭 AI 助手" }).click();
+  await expect(page.getByText("转订单审批被驳回", { exact: false }).first()).toBeVisible({ timeout: 15_000 });
+});

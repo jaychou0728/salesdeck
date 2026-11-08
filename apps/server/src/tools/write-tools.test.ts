@@ -95,6 +95,44 @@ describe("write tools", () => {
     expect(db.select().from(orders).all()).toHaveLength(4);
   });
 
+  it("writes an order-conversion rejection back to the opportunity", async () => {
+    const { ctx, events, db } = setup();
+    const payload = {
+      customerId: "c_huachen",
+      contactId: "ct_zhang_1",
+      opportunityId: "o_huachen_server",
+      lines: [{ sku: "X1", quantity: 120 }],
+    };
+    const preview = await executeTool(tool("create_quote"), ctx, { ...payload, dryRun: true });
+    expect(preview.model.ok).toBe(true);
+    const token = events.find((event) => event.type === "artifact").payload.confirmationToken;
+    const quoteResult = await executeTool(tool("create_quote"), ctx, {
+      ...payload,
+      dryRun: false,
+      confirmationToken: token,
+      idempotencyKey: "idem-reject-quote-1",
+    });
+    expect(quoteResult.model.ok).toBe(true);
+    const quote = (quoteResult.model as any).data.quote;
+
+    const orderPreview = await executeTool(tool("convert_quote_to_order"), ctx, { quoteId: quote.id, dryRun: true });
+    expect(orderPreview.model.ok).toBe(true);
+    const orderToken = events.filter((event) => event.type === "artifact").at(-1).payload.confirmationToken;
+    const pending = await executeTool(tool("convert_quote_to_order"), ctx, {
+      quoteId: quote.id,
+      dryRun: false,
+      confirmationToken: orderToken,
+      idempotencyKey: "idem-reject-order-1",
+    });
+    expect((pending.model as any).data.status).toBe("pending_approval");
+    const approvalId = (pending.model as any).data.approvalId;
+
+    decideApproval({ ...ctx, actor: manager }, approvalId, "reject", "信用不足", "idem-reject-approval-1");
+    const opportunity = db.select().from(opportunities).where(eq(opportunities.id, "o_huachen_server")).get();
+    expect(opportunity?.nextAction).toContain("驳回");
+    expect(opportunity?.riskLevel).toBe("high");
+  });
+
   it("approves and creates the order with reserved stock", async () => {
     const { ctx, events, db } = setup();
     const preview = await executeTool(tool("create_quote"), ctx, { customerId: "c_huachen", contactId: "ct_zhang_1", lines: [{ sku: "X1", quantity: 120 }], dryRun: true });

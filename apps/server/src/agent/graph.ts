@@ -129,7 +129,7 @@ export function buildAgentGraph(input: {
         }
         const nextCount = (counts[call.function.name] ?? 0) + 1;
         counts[call.function.name] = nextCount;
-        if (nextCount > 2) {
+        if (nextCount > 3) {
           budgetExceeded = true;
           toolMessages.push({
             role: "tool",
@@ -151,7 +151,7 @@ export function buildAgentGraph(input: {
       if (state.pendingConfirmation) {
         content = "已生成预览，请在下方确认。";
       } else if (state.budgetExceeded) {
-        content = "工具调用次数超出限制，请缩小问题范围。";
+        content = "这次查询需要多个业务步骤，已暂停。请先指定要查客户、库存还是报价，我按一步来处理。";
       } else {
         content = last?.content && last.content.trim().length > 0 ? last.content : "信息不足，请补充客户、SKU 和数量。";
       }
@@ -163,7 +163,7 @@ export function buildAgentGraph(input: {
     .addConditionalEdges("classify", (state) => (state.intent === "policy" ? "retrieve" : "agent"), { retrieve: "retrieve", agent: "agent" })
     .addEdge("retrieve", "agent")
     .addConditionalEdges("agent", (state) => ((state.toolCalls ?? []).length > 0 ? "tools" : "respond"), { tools: "tools", respond: "respond" })
-    .addConditionalEdges("tools", (state) => (state.pendingConfirmation || state.budgetExceeded || state.stepCount >= 8 ? "respond" : "agent"), { respond: "respond", agent: "agent" })
+    .addConditionalEdges("tools", (state) => (state.pendingConfirmation || state.budgetExceeded || state.stepCount >= 10 ? "respond" : "agent"), { respond: "respond", agent: "agent" })
     .addEdge("respond", END);
 
   return graph.compile();

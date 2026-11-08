@@ -107,7 +107,7 @@ describe("agent graph", () => {
     });
     expect(result.stepCount).toBeLessThanOrEqual(8);
     expect(result.finalText).toBeTruthy();
-    expect(result.finalText).toContain("超出限制");
+    expect(result.finalText).toContain("多个业务步骤");
   });
 
   it("retrieves policy evidence with citations and a retrieval step", async () => {

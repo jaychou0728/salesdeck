@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { AppError } from "@salespilot/shared";
-import { approvals, quotes, users } from "../db/schema.js";
+import { approvals, opportunities, quotes, users } from "../db/schema.js";
 import { assertManager } from "./permissions.js";
 import { withIdempotency } from "./idempotency.js";
 import { createOrderFromQuote } from "./orders.js";
@@ -29,6 +29,29 @@ export function createApproval(
   return approvalId;
 }
 
+function markOpportunityRejectedAfterApproval(ctx: ToolContext, quoteId: string, nextAction: string) {
+  const quote = ctx.db.select().from(quotes).where(eq(quotes.id, quoteId)).get();
+  if (!quote) return;
+  const opportunity = quote.opportunityId
+    ? ctx.db.select().from(opportunities).where(eq(opportunities.id, quote.opportunityId)).get()
+    : ctx.db
+        .select()
+        .from(opportunities)
+        .where(and(eq(opportunities.customerId, quote.customerId), inArray(opportunities.stage, ["quote", "negotiation"])))
+        .orderBy(desc(opportunities.updatedAt))
+        .get();
+  if (!opportunity) return;
+  ctx.db
+    .update(opportunities)
+    .set({
+      nextAction,
+      riskLevel: "high",
+      updatedAt: Date.now(),
+    })
+    .where(eq(opportunities.id, opportunity.id))
+    .run();
+}
+
 export function decideApproval(
   ctx: ToolContext,
   approvalId: string,
@@ -53,6 +76,12 @@ export function decideApproval(
         if (decision === "reject" && approval.type === "quote_price") {
           const payload = JSON.parse(approval.payloadJson) as { quoteId: string };
           ctx.db.update(quotes).set({ status: "rejected" }).where(eq(quotes.id, payload.quoteId)).run();
+          markOpportunityRejectedAfterApproval(ctx, payload.quoteId, "报价被驳回，重新评估价格与审批路径");
+          return { status: "rejected" };
+        }
+        if (decision === "reject" && approval.type === "order_conversion") {
+          const payload = JSON.parse(approval.payloadJson) as { quoteId: string };
+          markOpportunityRejectedAfterApproval(ctx, payload.quoteId, "转订单审批被驳回，重新确认信用与付款方案");
           return { status: "rejected" };
         }
         if (decision === "approve" && approval.type === "quote_price") {
