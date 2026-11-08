@@ -34,6 +34,7 @@ export function createOpportunity(input: {
 export function updateOpportunity(
   id: string,
   patch: {
+    name?: string;
     stage?: string;
     probability?: number;
     riskLevel?: string;

@@ -1,6 +1,7 @@
 import { pathToFileURL } from "node:url";
 import { createDb, type Db } from "./client.js";
 import {
+  afterSalesTickets,
   contacts,
   customers,
   followUps,
@@ -21,6 +22,7 @@ import {
   buildOpportunitySeeds,
   buildOrderSeeds,
   buildQuoteSeeds,
+  buildTicketSeeds,
   contacts as contactSeeds,
   customers as customerSeeds,
   inventoryRows,
@@ -43,6 +45,7 @@ export function seedDatabase(db: Db, now = Date.now()) {
   db.insert(inventory).values(inventoryRows).onConflictDoNothing().run();
   db.insert(opportunities).values(buildOpportunitySeeds(now)).onConflictDoNothing().run();
   db.insert(followUps).values(buildFollowUpSeeds(now)).onConflictDoNothing().run();
+  db.insert(afterSalesTickets).values(buildTicketSeeds(now)).onConflictDoNothing().run();
   db.insert(quotes).values(buildQuoteSeeds(now)).onConflictDoNothing().run();
   db.insert(quoteLines).values(quoteLineSeeds).onConflictDoNothing().run();
   db.insert(orders).values(buildOrderSeeds(now)).onConflictDoNothing().run();

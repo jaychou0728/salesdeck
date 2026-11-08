@@ -1,0 +1,1 @@
+ALTER TABLE `order_lines` ADD `quote_line_id` text;

@@ -23,6 +23,7 @@ export interface RecordFollowUpInput {
 }
 
 export interface UpdateOpportunityInput {
+  name?: string;
   stage?: OpportunityStage;
   probability?: number;
   riskLevel?: RiskLevel;
@@ -116,6 +117,7 @@ export function updateOpportunity(db: Db, actor: Actor, opportunityId: string, p
   const now = Date.now();
   db.update(opportunities)
     .set({
+      name: patch.name ?? undefined,
       stage: patch.stage ?? undefined,
       probability: patch.probability ?? undefined,
       riskLevel: patch.riskLevel ?? undefined,

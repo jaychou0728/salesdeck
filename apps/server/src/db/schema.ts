@@ -162,6 +162,7 @@ export const orders = sqliteTable(
 export const orderLines = sqliteTable("order_lines", {
   id: text("id").primaryKey(),
   orderId: text("order_id").notNull(),
+  quoteLineId: text("quote_line_id"),
   productId: text("product_id").notNull(),
   quantity: integer("quantity").notNull(),
   unitPriceCents: integer("unit_price_cents").notNull(),

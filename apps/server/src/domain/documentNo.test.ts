@@ -10,6 +10,6 @@ describe("document numbers", () => {
     const year = new Date().getFullYear();
     expect(nextQuoteNo(db)).toBe(`Q-${year}-0104`);
     expect(nextOrderNo(db)).toBe(`SO-${year}-0104`);
-    expect(nextTicketNo(db)).toBe(`AS-${year}-0001`);
+    expect(nextTicketNo(db)).toBe(`AS-${year}-0003`);
   });
 });

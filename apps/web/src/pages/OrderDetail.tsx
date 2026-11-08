@@ -1,24 +1,54 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ShoppingCart } from "lucide-react";
-import { useApi, type OrderDetailResponse } from "../api/business";
+import { ArrowLeft, CheckCircle2, ShoppingCart, XCircle } from "lucide-react";
+import { apiPatch, errorMessage, useApi, type OrderDetailResponse } from "../api/business";
+import { useAppStore, useRole } from "../state/store";
 import { formatMoney } from "../lib/utils";
 import { formatDateTime, statusLabel, statusTone } from "../lib/status";
 import { PageHeader } from "../components/ui/Page";
 import { Card, CardBody, CardHeader } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
+import { Field, Textarea } from "../components/ui/Field";
+import { Modal } from "../components/ui/Modal";
 import { ErrorBanner, LoadingBlock } from "../components/ui/Feedback";
 import { Table, TBody, TD, TH, THead, TR } from "../components/ui/Table";
 
 export function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const role = useRole();
+  const { pushToast, bumpData } = useAppStore();
   const { data, loading, error, refetch } = useApi<OrderDetailResponse>(id ? `/api/business/orders/${id}` : null);
+  const [orderAction, setOrderAction] = useState<"fulfilled" | "cancelled" | null>(null);
+  const [reason, setReason] = useState("");
+  const [working, setWorking] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   if (loading && !data) return <LoadingBlock label="加载订单详情…" />;
   if (error) return <ErrorBanner message={error} onRetry={refetch} />;
   if (!data) return null;
 
   const { order, customer, lines, reservations } = data;
+  const isReserved = order.status === "reserved";
+
+  async function applyOrderAction() {
+    if (!id || !orderAction) return;
+    setWorking(true);
+    setActionError(null);
+    try {
+      await apiPatch(`/api/business/orders/${id}`, { status: orderAction, reason: reason.trim() || undefined });
+      pushToast(orderAction === "fulfilled" ? "订单已标记履约" : "订单已取消，库存与信用已释放", "success");
+      bumpData();
+      setOrderAction(null);
+      setReason("");
+      refetch();
+    } catch (caught) {
+      setActionError(errorMessage(caught));
+    } finally {
+      setWorking(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -41,7 +71,29 @@ export function OrderDetail() {
             </span>
           ) : undefined
         }
+        actions={
+          isReserved ? (
+            <>
+              <Button size="sm" onClick={() => setOrderAction("fulfilled")}>
+                <CheckCircle2 size={14} /> 标记已履约
+              </Button>
+              {role === "manager" ? (
+                <Button size="sm" variant="danger" onClick={() => setOrderAction("cancelled")}>
+                  <XCircle size={14} /> 取消订单
+                </Button>
+              ) : null}
+            </>
+          ) : null
+        }
       />
+
+      {actionError ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-700">{actionError}</div> : null}
+
+      {order.status === "cancelled" ? (
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-500">
+          订单已取消：库存预留与信用占用已释放，报价的已转数量已回退。
+        </div>
+      ) : null}
 
       {order.opportunityId ? (
         <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-500">
@@ -118,6 +170,48 @@ export function OrderDetail() {
           </Table>
         </div>
       </Card>
+
+      <Modal
+        open={orderAction !== null}
+        onClose={() => {
+          setOrderAction(null);
+          setReason("");
+        }}
+        title={orderAction === "cancelled" ? "取消订单" : "标记订单已履约"}
+        description={
+          orderAction === "cancelled"
+            ? "取消后会释放库存预留与信用占用，并把报价已转数量回退。"
+            : "确认后库存将被扣减，订单进入已履约状态。"
+        }
+        footer={
+          <>
+            <Button size="sm" variant="secondary" onClick={() => setOrderAction(null)}>取消</Button>
+            <Button
+              size="sm"
+              variant={orderAction === "cancelled" ? "danger" : "primary"}
+              onClick={applyOrderAction}
+              disabled={working}
+            >
+              {working ? "处理中…" : orderAction === "cancelled" ? "确认取消订单" : "确认履约"}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <div className="rounded-lg bg-slate-50 p-2 text-xs text-slate-600">
+            订单 {order.orderNo} · {formatMoney(order.totalCents)}
+          </div>
+          <Field label="备注（可选）" htmlFor="order-action-reason">
+            <Textarea
+              id="order-action-reason"
+              rows={2}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder={orderAction === "cancelled" ? "例如：客户调整采购计划" : "例如：已发货，客户签收"}
+            />
+          </Field>
+        </div>
+      </Modal>
     </div>
   );
 }

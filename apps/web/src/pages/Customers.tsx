@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { useApi, type CustomersResponse } from "../api/business";
 import { formatMoney } from "../lib/utils";
 import { formatPercent } from "../lib/status";
 import { PageHeader } from "../components/ui/Page";
 import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Field";
 import { CreditBar } from "../components/ui/Field";
 import { EmptyState, ErrorBanner, LoadingBlock } from "../components/ui/Feedback";
 import { Table, TBody, TD, TH, THead, TR } from "../components/ui/Table";
+import { NewCustomerModal } from "../components/NewCustomerModal";
 import { useRole } from "../state/store";
 
 const LEVEL_TONE = { A: "teal", B: "info", C: "neutral" } as const;
@@ -18,6 +20,7 @@ export function Customers() {
   const navigate = useNavigate();
   const role = useRole();
   const [q, setQ] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
   const path = `/api/business/customers${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`;
   const { data, loading, error, refetch } = useApi<CustomersResponse>(path);
 
@@ -27,15 +30,20 @@ export function Customers() {
         title="客户"
         description={role === "manager" ? "团队名下全部客户与信用使用情况" : "我负责的客户与信用使用情况"}
         actions={
-          <div className="relative">
-            <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input
-              aria-label="搜索客户"
-              placeholder="搜索名称或区域…"
-              value={q}
-              onChange={(event) => setQ(event.target.value)}
-              className="w-56 pl-8"
-            />
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus size={14} /> 新建客户
+            </Button>
+            <div className="relative">
+              <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input
+                aria-label="搜索客户"
+                placeholder="搜索名称或区域…"
+                value={q}
+                onChange={(event) => setQ(event.target.value)}
+                className="w-56 pl-8"
+              />
+            </div>
           </div>
         }
       />
@@ -92,6 +100,13 @@ export function Customers() {
           </div>
         )
       ) : null}
+
+      <NewCustomerModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        role={role}
+        onCreated={(customerId) => navigate(`/customers/${customerId}`)}
+      />
     </div>
   );
 }

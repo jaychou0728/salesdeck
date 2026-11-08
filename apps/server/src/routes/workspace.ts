@@ -16,6 +16,7 @@ const ERROR_STATUS: Record<string, number> = {
 };
 
 const PATCH = z.object({
+  name: z.string().min(1).max(100).optional(),
   stage: opportunityStage.optional(),
   probability: z.number().int().min(0).max(100).optional(),
   riskLevel: riskLevel.optional(),

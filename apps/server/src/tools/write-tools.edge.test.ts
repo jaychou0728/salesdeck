@@ -142,7 +142,13 @@ describe("write tool edge cases", () => {
       idempotencyKey: "idem-ticket-1",
     });
     expect(result.model.ok).toBe(true);
-    expect(db.select().from(afterSalesTickets).all()).toHaveLength(1);
+    const created = db
+      .select()
+      .from(afterSalesTickets)
+      .all()
+      .find((ticket) => ticket.description === "开箱发现屏幕损坏");
+    expect(created).toBeTruthy();
+    expect(created!.status).toBe("open");
   });
 
   it("rejects converting another owner's quote", async () => {

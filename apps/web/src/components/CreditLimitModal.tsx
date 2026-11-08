@@ -16,13 +16,13 @@ export function CreditLimitModal({
   open,
   onClose,
   customer,
-  quoteTotalCents,
+  quoteTotalCents = 0,
   onSubmitted,
 }: {
   open: boolean;
   onClose: () => void;
   customer: CustomerRow;
-  quoteTotalCents: number;
+  quoteTotalCents?: number;
   onSubmitted?: () => void;
 }) {
   const { pushToast, bumpData } = useAppStore();
@@ -34,7 +34,7 @@ export function CreditLimitModal({
   useEffect(() => {
     if (!open) return;
     setRequestedYuan(String(suggestedLimitYuan(customer, quoteTotalCents)));
-    setReason("客户信用额度不足，申请提升额度以完成本次订单。");
+    setReason(quoteTotalCents > 0 ? "客户信用额度不足，申请提升额度以完成本次订单。" : "客户信用额度不足，申请提升额度以支持后续业务。");
     setError(null);
   }, [open, customer, quoteTotalCents]);
 
@@ -99,13 +99,15 @@ export function CreditLimitModal({
             <div className="text-slate-400">已用额度</div>
             <div className="mt-0.5 font-medium tabular-nums">{formatMoney(customer.creditUsedCents)}</div>
           </div>
-          <div className="rounded-lg bg-slate-50 p-2">
-            <div className="text-slate-400">本次订单</div>
-            <div className="mt-0.5 font-medium tabular-nums">{formatMoney(quoteTotalCents)}</div>
-          </div>
+          {quoteTotalCents > 0 ? (
+            <div className="rounded-lg bg-slate-50 p-2">
+              <div className="text-slate-400">本次订单</div>
+              <div className="mt-0.5 font-medium tabular-nums">{formatMoney(quoteTotalCents)}</div>
+            </div>
+          ) : null}
         </div>
 
-        <Field label="申请额度（元）" htmlFor="credit-limit-amount" hint="默认按“已用额度 + 本次订单”向上取整">
+        <Field label="申请额度（元）" htmlFor="credit-limit-amount" hint={quoteTotalCents > 0 ? "默认按“已用额度 + 本次订单”向上取整" : "按客户资信与回款安排填写"}>
           <Input
             id="credit-limit-amount"
             aria-label="申请额度（元）"

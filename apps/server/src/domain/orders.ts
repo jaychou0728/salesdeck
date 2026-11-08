@@ -137,7 +137,7 @@ export function createOrderFromQuote(
           .get();
         if (!invRow) throw new AppError("NOT_FOUND", "库存记录不存在");
         reserveWithVersion(ctx.sqlite, allocation.warehouseId, line.productId, allocation.quantity, invRow.version);
-        ctx.db.insert(orderLines).values({ id: `ol_${randomUUID()}`, orderId, productId: line.productId, quantity: allocation.quantity, unitPriceCents: line.unitPriceCents, warehouseId: allocation.warehouseId }).run();
+        ctx.db.insert(orderLines).values({ id: `ol_${randomUUID()}`, orderId, quoteLineId: line.id, productId: line.productId, quantity: allocation.quantity, unitPriceCents: line.unitPriceCents, warehouseId: allocation.warehouseId }).run();
         ctx.db.insert(stockReservations).values({ id: `sr_${randomUUID()}`, orderId, productId: line.productId, warehouseId: allocation.warehouseId, quantity: allocation.quantity, status: "active" }).run();
       }
       ctx.db

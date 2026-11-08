@@ -4,6 +4,7 @@ import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "./seed.js";
 import { startOfMonthLocal } from "../lib/time.js";
 import {
+  afterSalesTickets,
   contacts,
   customers,
   followUps,
@@ -39,6 +40,7 @@ describe("seed", () => {
     expect(db.select().from(stockReservations).all()).toHaveLength(4);
     expect(db.select().from(opportunities).all()).toHaveLength(12);
     expect(db.select().from(followUps).all()).toHaveLength(6);
+    expect(db.select().from(afterSalesTickets).all()).toHaveLength(2);
   });
 
   it("keeps the quote, order and reservation chain consistent", () => {

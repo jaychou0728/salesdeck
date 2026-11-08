@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Bot, ClipboardList, Plus } from "lucide-react";
-import { useApi, type CustomerDetailResponse } from "../api/business";
-import { useAppStore } from "../state/store";
+import { ArrowLeft, Bot, ClipboardList, Pencil, Plus } from "lucide-react";
+import { useApi, type ContactRow, type CustomerDetailResponse } from "../api/business";
+import { useAppStore, useRole } from "../state/store";
 import { formatMoney } from "../lib/utils";
 import { formatDate, formatDateTime, formatPercent, statusLabel, statusTone } from "../lib/status";
 import { FOLLOW_UP_TYPE_LABELS, RISK_LABELS, STAGE_LABELS, riskTone, stageTone } from "../lib/opportunity";
@@ -16,6 +16,10 @@ import { Table, TBody, TD, TH, THead, TR } from "../components/ui/Table";
 import { AIAssessmentCard } from "../components/AIAssessmentCard";
 import { FollowUpModal } from "../components/FollowUpModal";
 import { NewOpportunityModal } from "../components/NewOpportunityModal";
+import { CustomerEditModal } from "../components/CustomerEditModal";
+import { ContactModal } from "../components/ContactModal";
+import { CreditLimitModal } from "../components/CreditLimitModal";
+import { CreditLimitEditModal } from "../components/CreditLimitEditModal";
 
 const LEVEL_TONE = { A: "teal", B: "info", C: "neutral" } as const;
 
@@ -23,10 +27,16 @@ export function CustomerDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { openAi, queuePrompt } = useAppStore();
+  const role = useRole();
   const { data, loading, error, refetch } = useApi<CustomerDetailResponse>(id ? `/api/business/customers/${id}` : null);
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const [followUpOpportunityId, setFollowUpOpportunityId] = useState<string | undefined>();
   const [newOpportunityOpen, setNewOpportunityOpen] = useState(false);
+  const [customerEditOpen, setCustomerEditOpen] = useState(false);
+  const [creditEditOpen, setCreditEditOpen] = useState(false);
+  const [creditRequestOpen, setCreditRequestOpen] = useState(false);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<ContactRow | null>(null);
 
   if (loading && !data) return <LoadingBlock label="加载客户 360…" />;
   if (error) return <ErrorBanner message={error} onRetry={refetch} />;
@@ -46,13 +56,18 @@ export function CustomerDetail() {
           <span className="flex flex-wrap items-center gap-2">
             {customer.name}
             <Badge tone={LEVEL_TONE[customer.level] ?? "neutral"}>{customer.level} 级</Badge>
-            <Badge tone={customer.status === "active" ? "success" : "neutral"}>{customer.status === "active" ? "合作中" : customer.status}</Badge>
+            <Badge tone={customer.status === "active" ? "success" : "neutral"}>
+              {customer.status === "active" ? "合作中" : customer.status === "inactive" ? "已停用" : customer.status}
+            </Badge>
             <span className="text-[11px] font-normal text-slate-400">客户推进中心</span>
           </span>
         }
         description={`${customer.industry} · ${customer.region} · 负责人 ${customer.ownerName ?? customer.ownerId} · ${customer.paymentTerms}`}
         actions={
           <>
+            <Button size="sm" variant="secondary" onClick={() => setCustomerEditOpen(true)}>
+              <Pencil size={14} /> 编辑客户
+            </Button>
             <Button size="sm" onClick={() => navigate(`/quotes/new?customerId=${customer.id}`)}>
               <Plus size={14} /> 新建报价
             </Button>
@@ -182,7 +197,17 @@ export function CustomerDetail() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title="信用额度" description="信用使用情况实时来自客户主数据" />
+          <CardHeader
+            title="信用额度"
+            description={role === "manager" ? "可直接调整额度，调整会写审计并作废待审批的提额申请" : "额度由经理维护；额度不足时可发起提额申请"}
+            actions={
+              role === "manager" ? (
+                <Button size="sm" variant="secondary" onClick={() => setCreditEditOpen(true)}>调整额度</Button>
+              ) : (
+                <Button size="sm" variant="secondary" onClick={() => setCreditRequestOpen(true)}>申请提额</Button>
+              )
+            }
+          />
           <CardBody className="space-y-3">
             <div className="flex items-end justify-between">
               <div className="text-2xl font-semibold tabular-nums text-slate-900">{formatPercent(credit.utilization)}</div>
@@ -209,20 +234,48 @@ export function CustomerDetail() {
         </Card>
 
         <Card>
-          <CardHeader title="联系人" description={`${contacts.length} 位`} />
+          <CardHeader
+            title="联系人"
+            description={`${contacts.length} 位`}
+            actions={
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setEditingContact(null);
+                  setContactModalOpen(true);
+                }}
+              >
+                添加
+              </Button>
+            }
+          />
           <CardBody className="space-y-2">
             {contacts.length === 0 ? (
               <div className="py-4 text-center text-xs text-slate-400">暂无联系人</div>
             ) : (
               contacts.map((contact) => (
                 <div key={contact.id} className="rounded-lg border border-slate-200 p-2.5 text-xs">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-slate-800">{contact.name}</span>
-                    {contact.isPrimary ? <Badge tone="teal">主要</Badge> : null}
+                    <span className="flex items-center gap-1">
+                      {contact.isPrimary ? <Badge tone="teal">主要</Badge> : null}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label={`编辑联系人 ${contact.name}`}
+                        onClick={() => {
+                          setEditingContact(contact);
+                          setContactModalOpen(true);
+                        }}
+                      >
+                        <Pencil size={12} /> 编辑
+                      </Button>
+                    </span>
                   </div>
                   <div className="mt-0.5 text-slate-500">{contact.title}</div>
                   <div className="mt-1 text-[11px] text-slate-400">
-                    {contact.phone} · {contact.email}
+                    {contact.phone || "—"} · {contact.email || "—"}
                   </div>
                 </div>
               ))
@@ -355,6 +408,36 @@ export function CustomerDetail() {
         onClose={() => setNewOpportunityOpen(false)}
         initialCustomerId={customer.id}
         onCreated={refetch}
+      />
+
+      <CustomerEditModal
+        open={customerEditOpen}
+        onClose={() => setCustomerEditOpen(false)}
+        customer={customer}
+        role={role}
+        onSaved={refetch}
+      />
+
+      <CreditLimitEditModal
+        open={creditEditOpen}
+        onClose={() => setCreditEditOpen(false)}
+        customer={customer}
+        onSaved={refetch}
+      />
+
+      <CreditLimitModal
+        open={creditRequestOpen}
+        onClose={() => setCreditRequestOpen(false)}
+        customer={customer}
+        onSubmitted={refetch}
+      />
+
+      <ContactModal
+        open={contactModalOpen}
+        onClose={() => setContactModalOpen(false)}
+        customerId={customer.id}
+        contact={editingContact}
+        onSaved={refetch}
       />
     </div>
   );

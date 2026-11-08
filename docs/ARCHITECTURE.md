@@ -149,10 +149,18 @@ type ToolResult<T> =
 | POST | `/api/business/opportunities` | 为权限范围内客户新建商机 |
 | GET | `/api/business/opportunities` | 商机列表（stage / risk / customerId / ownerId 筛选） |
 | GET | `/api/business/opportunities/:id` | 商机详情、关联交易与跟进 |
-| PATCH | `/api/business/opportunities/:id` | 更新阶段、概率、风险、下一步 |
+| PATCH | `/api/business/opportunities/:id` | 更新名称、金额、阶段、概率、风险、预计成交、下一步 |
 | POST | `/api/business/follow-ups` | 记录跟进并同步商机下一步 |
+| POST | `/api/business/customers` | 新建客户（销售默认本人；经理可分配负责人、等级与初始额度） |
+| PATCH | `/api/business/customers/:id` | 修改客户资料（销售限基础字段，经理可改等级/负责人/状态） |
 | POST | `/api/business/customers/:id/credit-limit-requests` | 销售发起客户信用提额申请，经理审批后更新额度 |
-| GET | `/api/business/{customers,inventory,quotes,approvals}` | 业务面板只读数据 |
+| PATCH | `/api/business/customers/:id/credit-limit` | 经理直接调整信用额度（不得低于已用，作废待审批提额） |
+| POST | `/api/business/customers/:id/contacts` | 新增联系人 |
+| PATCH/DELETE | `/api/business/contacts/:id` | 修改/删除联系人（主要联系人自动顺延） |
+| GET | `/api/business/team-members` | 经理查看团队销售，用于分配客户 |
+| PATCH | `/api/business/orders/:id` | 标记履约 / 取消订单（取消仅经理，释放库存与信用并回退报价已转数量） |
+| PATCH | `/api/business/tickets/:id` | 更新工单状态与处理结果 |
+| GET | `/api/business/{customers,inventory,quotes,approvals}` | 业务面板数据 |
 | GET | `/api/conversations`、`/api/conversations/:id` | 会话历史 |
 | GET | `/api/traces/:id` | trace 详情与事件序列 |
 | POST | `/api/demo/reset` | 重置演示数据（仅 `DEMO_MODE=true`） |
@@ -162,7 +170,7 @@ type ToolResult<T> =
 
 - **主数据**：`users`（含 `monthly_target_cents`）、`customers`、`contacts`、`products`、`price_rules`、`warehouses`、`inventory`。
 - **商机与跟进**：`opportunities`、`follow_ups`；`quotes.opportunity_id`、`orders.opportunity_id` 显式关联商机。
-- **交易**：`quotes`、`quote_lines`（`converted_quantity` 记录已转数量，支持拆单）、`orders`、`order_lines`、`stock_reservations`、`approvals`、`after_sales_tickets`。
+- **交易**：`quotes`、`quote_lines`（`converted_quantity` 记录已转数量，支持拆单）、`orders`、`order_lines`（`quote_line_id` 支持取消订单时回退报价已转数量）、`stock_reservations`、`approvals`、`after_sales_tickets`。
 - **智能与审计**：`conversations`、`messages`、`traces`、`trace_events`、`audit_logs`、`idempotency_keys`、`confirmation_tokens`、`knowledge_docs`、`knowledge_chunks`。
 - 金额统一以「分」为整数存储；seed 使用固定 ID 与相对当前时间的有效期，保证可复现。
 
@@ -175,6 +183,6 @@ type ToolResult<T> =
 
 ## 11. 质量证据
 
-- Vitest：shared 14 个测试 + 服务端 132 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、拆单转订单、优先级引擎、workspace 聚合、商机创建/跟进、审批驳回与提额闭环、单据编号、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
-- Playwright：12 条端到端测试（含作战室、商机创建、客户跟进、经理视图、AI 推进、审批驳回、拆单转单、重置确认与移动端导航）。
+- Vitest：shared 14 个测试 + 服务端 140 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、拆单转订单、客户/联系人/商机/工单编辑、订单履约与取消回滚、优先级引擎、workspace 聚合、审批驳回与提额闭环、单据编号、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
+- Playwright：19 条端到端测试（含作战室、商机创建与编辑、客户跟进、客户/联系人编辑、经理视图、信用提额与直接调额、AI 推进、审批驳回、拆单转单、订单履约、工单处理、重置确认与移动端导航）。
 - Agent 评测：30 条 golden cases，当前通过率 100%（见 `docs/EVAL_REPORT.md`）。

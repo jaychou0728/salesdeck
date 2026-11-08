@@ -33,7 +33,7 @@ export class ApiError extends Error {
   }
 }
 
-async function apiRequest<T>(method: "GET" | "POST" | "PATCH", path: string, body?: unknown): Promise<T> {
+async function apiRequest<T>(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: unknown): Promise<T> {
   const actorId = useAppStore.getState().actorId;
   const headers: Record<string, string> = { "x-actor-id": actorId };
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -73,6 +73,10 @@ export function apiPost<T>(path: string, body: unknown = {}): Promise<T> {
 
 export function apiPatch<T>(path: string, body: unknown): Promise<T> {
   return apiRequest<T>("PATCH", path, body);
+}
+
+export function apiDelete<T>(path: string): Promise<T> {
+  return apiRequest<T>("DELETE", path);
 }
 
 export function errorMessage(error: unknown): string {
@@ -135,6 +139,18 @@ export interface ActorProfile {
 export interface MeResponse {
   actor: ActorProfile;
   permissions: { scope: "self" | "team"; canApprove: boolean; canAdjustInventory: boolean };
+}
+
+export interface TeamMemberRow {
+  id: string;
+  name: string;
+  role: Role;
+  teamId: string;
+}
+
+export interface TeamMembersResponse {
+  ok: true;
+  members: TeamMemberRow[];
 }
 
 export interface CustomerRow {
@@ -246,6 +262,7 @@ export interface ConvertPreviewLine extends QuoteLineRow {
 export interface OrderLineRow {
   id: string;
   orderId: string;
+  quoteLineId?: string | null;
   productId: string;
   quantity: number;
   unitPriceCents: number;

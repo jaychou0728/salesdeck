@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Bot, ClipboardList, FileText, Phone } from "lucide-react";
+import { ArrowLeft, Bot, ClipboardList, FileText, Pencil, Phone } from "lucide-react";
 import type { PriorityItem } from "@salespilot/shared";
 import { errorMessage, useApi, type OpportunityDetailResponse } from "../api/business";
 import { updateOpportunity } from "../api/workspace";
@@ -18,6 +18,7 @@ import { ErrorBanner, LoadingBlock } from "../components/ui/Feedback";
 import { Table, TBody, TD, TH, THead, TR } from "../components/ui/Table";
 import { AIAssessmentCard } from "../components/AIAssessmentCard";
 import { FollowUpModal } from "../components/FollowUpModal";
+import { OpportunityEditModal } from "../components/OpportunityEditModal";
 
 export function OpportunityDetail() {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +28,7 @@ export function OpportunityDetail() {
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [opportunityEditOpen, setOpportunityEditOpen] = useState(false);
   const [draftAction, setDraftAction] = useState("");
   const [draftDue, setDraftDue] = useState("");
 
@@ -89,6 +91,9 @@ export function OpportunityDetail() {
           <>
             <Button size="sm" onClick={() => askAi(priority)}>
               <Bot size={14} /> 让 AI 帮我推进
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => setOpportunityEditOpen(true)}>
+              <Pencil size={14} /> 编辑商机
             </Button>
             <Button size="sm" variant="secondary" onClick={() => setFollowUpOpen(true)}>
               <ClipboardList size={14} /> 记录跟进
@@ -251,6 +256,13 @@ export function OpportunityDetail() {
         onClose={() => setFollowUpOpen(false)}
         customerId={customer.id}
         opportunityId={opportunity.id}
+        onSaved={refetch}
+      />
+
+      <OpportunityEditModal
+        open={opportunityEditOpen}
+        onClose={() => setOpportunityEditOpen(false)}
+        opportunity={opportunity}
         onSaved={refetch}
       />
     </div>

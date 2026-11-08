@@ -177,6 +177,39 @@ export function buildOpportunitySeeds(now: number): Array<typeof opportunitiesTa
   ];
 }
 
+export function buildTicketSeeds(now: number) {
+  return [
+    {
+      id: "t_seed_open",
+      ticketNo: "AS-2026-0001",
+      customerId: "c_huachen",
+      orderId: null,
+      productId: "p_x1",
+      serialNo: "SN-X1-24001",
+      issueType: "DOA",
+      description: "开箱后无法开机，客户要求按 DOA 政策换机。",
+      status: "open",
+      policyRefs: "[]",
+      resolution: null,
+      createdAt: now - 6 * 3600_000,
+    },
+    {
+      id: "t_seed_processing",
+      ticketNo: "AS-2026-0002",
+      customerId: "c_lingyun",
+      orderId: null,
+      productId: "p_x2",
+      serialNo: "SN-X2-24008",
+      issueType: "repair",
+      description: "屏幕右上角有亮点，已安排送修检测。",
+      status: "processing",
+      policyRefs: "[]",
+      resolution: null,
+      createdAt: now - 2 * 86400_000,
+    },
+  ];
+}
+
 export function buildFollowUpSeeds(now: number): Array<typeof followUpsTable.$inferInsert> {
   const day = 86_400_000;
   const hour = 3_600_000;
