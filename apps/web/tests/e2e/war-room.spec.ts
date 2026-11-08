@@ -87,6 +87,19 @@ test("manager rejection clears the sales approval card and updates the next acti
 
   await page.getByTestId("nav-quotes").click();
   await expect(page.getByText("转单被驳回").first()).toBeVisible({ timeout: 15_000 });
+
+  await page.getByText("转单被驳回").first().click();
+  await expect(page).toHaveURL(/\/quotes\/q_/);
+  await page.getByRole("button", { name: "申请提额" }).click();
+  await page.getByRole("button", { name: "提交申请" }).click();
+  await expect(page.getByText("提额申请已提交经理审批")).toBeVisible({ timeout: 15_000 });
+
+  await page.getByRole("combobox", { name: "切换角色" }).selectOption("u_manager_wang");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.getByTestId("nav-approvals").click();
+  await page.getByText("信用提额审批").first().click();
+  await page.getByRole("button", { name: "批准" }).click();
+  await expect(page.getByText(/信用额度更新为/)).toBeVisible({ timeout: 15_000 });
 });
 
 test("reset demo asks for confirmation", async ({ page }) => {

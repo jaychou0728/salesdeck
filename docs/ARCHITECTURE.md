@@ -150,6 +150,7 @@ type ToolResult<T> =
 | GET | `/api/business/opportunities/:id` | 商机详情、关联交易与跟进 |
 | PATCH | `/api/business/opportunities/:id` | 更新阶段、概率、风险、下一步 |
 | POST | `/api/business/follow-ups` | 记录跟进并同步商机下一步 |
+| POST | `/api/business/customers/:id/credit-limit-requests` | 销售发起客户信用提额申请，经理审批后更新额度 |
 | GET | `/api/business/{customers,inventory,quotes,approvals}` | 业务面板只读数据 |
 | GET | `/api/conversations`、`/api/conversations/:id` | 会话历史 |
 | GET | `/api/traces/:id` | trace 详情与事件序列 |
@@ -173,6 +174,6 @@ type ToolResult<T> =
 
 ## 11. 质量证据
 
-- Vitest：shared 14 个测试 + 服务端 127 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、优先级引擎、workspace 聚合、商机创建/跟进、审批驳回、单据编号、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
+- Vitest：shared 14 个测试 + 服务端 128 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、优先级引擎、workspace 聚合、商机创建/跟进、审批驳回与提额闭环、单据编号、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
 - Playwright：11 条端到端测试（含作战室、商机创建、客户跟进、经理视图、AI 推进、审批驳回、重置确认与移动端导航）。
 - Agent 评测：30 条 golden cases，当前通过率 100%（见 `docs/EVAL_REPORT.md`）。

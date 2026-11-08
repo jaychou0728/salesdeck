@@ -440,6 +440,56 @@ describe("business workspace", () => {
     expect(row.approvalType).toBe("order_conversion");
   });
 
+  it("creates and approves a credit limit request", async () => {
+    const { app } = setup();
+    const request = await app.inject({
+      method: "POST",
+      url: "/api/business/customers/c_huachen/credit-limit-requests",
+      headers: as("u_sales_lin"),
+      payload: { requestedLimitCents: 210_000_000, reason: "需要提升额度完成订单" },
+    });
+    expect(request.statusCode).toBe(200);
+    const approvalId = request.json().approvalId as string;
+
+    const approve = await app.inject({
+      method: "POST",
+      url: `/api/approvals/${approvalId}/decide`,
+      headers: as("u_manager_wang"),
+      payload: { decision: "approve", idempotencyKey: "idem-credit-limit-1" },
+    });
+    expect(approve.statusCode).toBe(200);
+    expect(approve.json().data.creditLimitCents).toBe(210_000_000);
+
+    const customer = await app.inject({ method: "GET", url: "/api/business/customers/c_huachen", headers: as("u_sales_lin") });
+    expect(customer.json().customer.creditLimitCents).toBe(210_000_000);
+
+    const quoteId = await createQuoteViaApi(app, 120);
+    const preview = await app.inject({
+      method: "POST",
+      url: `/api/business/quotes/${quoteId}/convert-preview`,
+      headers: as("u_sales_lin"),
+    });
+    expect(preview.statusCode).toBe(200);
+    const previewBody = preview.json();
+    expect(previewBody.preview.requiresApproval).toBe(false);
+    const convert = await app.inject({
+      method: "POST",
+      url: `/api/business/quotes/${quoteId}/convert`,
+      headers: as("u_sales_lin"),
+      payload: { token: previewBody.confirmationToken, payload: previewBody.input, idempotencyKey: "idem-credit-convert-1" },
+    });
+    expect(convert.statusCode).toBe(200);
+    expect(convert.json().data.status).toBe("committed");
+
+    const forbidden = await app.inject({
+      method: "POST",
+      url: "/api/business/customers/c_zhihang/credit-limit-requests",
+      headers: as("u_sales_lin"),
+      payload: { requestedLimitCents: 500_000_000, reason: "越权" },
+    });
+    expect(forbidden.statusCode).toBe(403);
+  });
+
   it("returns opportunities, follow-ups and assessment in customer detail", async () => {
     const { app } = setup();
     const response = await app.inject({ method: "GET", url: "/api/business/customers/c_huachen", headers: as("u_sales_lin") });

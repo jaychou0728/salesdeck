@@ -24,6 +24,7 @@ import { Card, CardBody } from "../components/ui/Card";
 const TYPE_LABEL: Record<string, string> = {
   order_conversion: "转订单审批",
   quote_price: "报价底线审批",
+  credit_limit: "信用提额审批",
 };
 
 export function Approvals() {
@@ -69,6 +70,7 @@ export function Approvals() {
       });
       if (decision === "reject") pushToast("审批已驳回", "info");
       else if (result.data.order) pushToast(`已批准，订单 ${result.data.order.orderNo} 已创建`, "success");
+      else if (result.data.creditLimitCents) pushToast(`已批准，信用额度更新为 ${formatMoney(result.data.creditLimitCents)}`, "success");
       else pushToast("审批已通过", "success");
       if (selected.id === pendingApprovalId) setPendingApproval(undefined);
       bumpData();

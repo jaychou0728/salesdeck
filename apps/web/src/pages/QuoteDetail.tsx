@@ -22,6 +22,7 @@ import { Modal } from "../components/ui/Modal";
 import { EmptyState, ErrorBanner, LoadingBlock } from "../components/ui/Feedback";
 import { Table, TBody, TD, TH, THead, TR } from "../components/ui/Table";
 import { FollowUpModal } from "../components/FollowUpModal";
+import { CreditLimitModal } from "../components/CreditLimitModal";
 
 const APPROVAL_TYPE_LABELS: Record<string, string> = {
   order_conversion: "转订单审批",
@@ -41,6 +42,7 @@ export function QuoteDetail() {
   const [convertError, setConvertError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [creditLimitOpen, setCreditLimitOpen] = useState(false);
 
   if (loading && !data) return <LoadingBlock label="加载报价详情…" />;
   if (error) return <ErrorBanner message={error} onRetry={refetch} />;
@@ -172,7 +174,16 @@ export function QuoteDetail() {
 
       {approval?.type === "order_conversion" && approval.status === "rejected" ? (
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-700">
-          转订单申请已被经理驳回：{approval.comment || approval.reason}。报价本身仍有效，请先记录跟进并修订报价，或调整信用/付款方案后重新提交。
+          <div>
+            转订单申请已被经理驳回：{approval.comment || approval.reason}。报价本身仍有效，请先记录跟进并修订报价，或申请提额/调整付款方案后重新提交。
+          </div>
+          {customer ? (
+            <div className="mt-2">
+              <Button size="sm" variant="amber" onClick={() => setCreditLimitOpen(true)}>
+                申请提额
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -354,6 +365,16 @@ export function QuoteDetail() {
         opportunityId={quote.opportunityId ?? undefined}
         onSaved={refetch}
       />
+
+      {customer ? (
+        <CreditLimitModal
+          open={creditLimitOpen}
+          onClose={() => setCreditLimitOpen(false)}
+          customer={customer}
+          quoteTotalCents={quote.totalCents}
+          onSubmitted={refetch}
+        />
+      ) : null}
     </div>
   );
 }

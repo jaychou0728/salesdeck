@@ -155,6 +155,12 @@ export const CreateOpportunityInput = z.object({
 });
 export type CreateOpportunityInput = z.infer<typeof CreateOpportunityInput>;
 
+export const CreditLimitRequestInput = z.object({
+  requestedLimitCents: moneyCents,
+  reason: z.string().min(2).max(500),
+});
+export type CreditLimitRequestInput = z.infer<typeof CreditLimitRequestInput>;
+
 export const SuggestActionsInput = z.object({
   actions: z
     .array(

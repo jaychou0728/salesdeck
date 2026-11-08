@@ -178,9 +178,16 @@ export function registerBusiness(app: FastifyInstance, deps: { db: Db; sqlite: D
 
   const approvalView = (row: typeof approvals.$inferSelect, db: Db) => {
     const quote = row.targetType === "quote" ? db.select().from(quotes).where(eq(quotes.id, row.targetId)).get() : undefined;
-    const customer = quote ? db.select({ id: customers.id, name: customers.name }).from(customers).where(eq(customers.id, quote.customerId)).get() : undefined;
+    const targetCustomer =
+      row.targetType === "customer"
+        ? db.select({ id: customers.id, name: customers.name }).from(customers).where(eq(customers.id, row.targetId)).get()
+        : undefined;
+    const customer = quote
+      ? db.select({ id: customers.id, name: customers.name }).from(customers).where(eq(customers.id, quote.customerId)).get()
+      : targetCustomer;
     const requester = db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, row.requesterId)).get();
     const approver = row.approverId ? db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, row.approverId)).get() : undefined;
+    const payload = parseJson(row.payloadJson, {}) as { requestedLimitCents?: number };
     return {
       id: row.id,
       type: row.type,
@@ -193,12 +200,12 @@ export function registerBusiness(app: FastifyInstance, deps: { db: Db; sqlite: D
       requesterName: requester?.name ?? null,
       approverId: row.approverId,
       approverName: approver?.name ?? null,
-      amountCents: quote?.totalCents ?? 0,
+      amountCents: quote?.totalCents ?? payload.requestedLimitCents ?? 0,
       customerId: customer?.id ?? null,
       customerName: customer?.name ?? null,
       createdAt: row.createdAt,
       decidedAt: row.decidedAt,
-      payload: parseJson(row.payloadJson, {}),
+      payload,
     };
   };
 

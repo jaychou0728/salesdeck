@@ -589,7 +589,7 @@ export interface ApprovalDetailResponse {
 }
 
 export interface ApprovalDecisionResponse {
-  data: { status: "approved" | "rejected"; order?: OrderRow; replayed?: boolean };
+  data: { status: "approved" | "rejected"; order?: OrderRow; creditLimitCents?: number; replayed?: boolean };
 }
 
 export interface TraceRow {

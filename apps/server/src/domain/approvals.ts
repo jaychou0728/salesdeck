@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { AppError } from "@salespilot/shared";
-import { approvals, opportunities, quotes, users } from "../db/schema.js";
+import { approvals, customers, opportunities, quotes, users } from "../db/schema.js";
 import { assertManager } from "./permissions.js";
 import { withIdempotency } from "./idempotency.js";
 import { createOrderFromQuote } from "./orders.js";
@@ -92,6 +92,31 @@ export function decideApproval(
         if (decision === "approve" && approval.type === "order_conversion") {
           const payload = JSON.parse(approval.payloadJson) as { quoteId: string; paymentTerms: string };
           return { status: "approved", order: createOrderFromQuote(ctx, payload.quoteId, payload.paymentTerms, { allowOverCredit: true }) };
+        }
+        if (approval.type === "credit_limit") {
+          const payload = JSON.parse(approval.payloadJson) as { customerId: string; requestedLimitCents: number };
+          if (decision === "approve") {
+            ctx.db
+              .update(customers)
+              .set({ creditLimitCents: payload.requestedLimitCents })
+              .where(eq(customers.id, payload.customerId))
+              .run();
+            return { status: "approved", creditLimitCents: payload.requestedLimitCents };
+          }
+          const opportunity = ctx.db
+            .select()
+            .from(opportunities)
+            .where(and(eq(opportunities.customerId, payload.customerId), inArray(opportunities.stage, ["quote", "negotiation"])))
+            .orderBy(desc(opportunities.updatedAt))
+            .get();
+          if (opportunity) {
+            ctx.db
+              .update(opportunities)
+              .set({ nextAction: "提额申请被驳回，考虑拆单或调整付款方案", riskLevel: "high", updatedAt: Date.now() })
+              .where(eq(opportunities.id, opportunity.id))
+              .run();
+          }
+          return { status: "rejected" };
         }
         return { status: decision === "approve" ? "approved" : "rejected" };
       },

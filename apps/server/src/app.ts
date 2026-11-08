@@ -16,6 +16,7 @@ import { registerBriefing } from "./routes/briefing.js";
 import { registerBusiness } from "./routes/business.js";
 import { registerWorkspace } from "./routes/workspace.js";
 import { registerFollowUps } from "./routes/followUps.js";
+import { registerCreditLimits } from "./routes/creditLimits.js";
 import { registerConversations } from "./routes/conversations.js";
 import { registerTraces } from "./routes/traces.js";
 import { registerDemo } from "./routes/demo.js";
@@ -34,6 +35,7 @@ export function buildApp(deps: { db: Db; sqlite: Database.Database; provider: Ch
   registerBusiness(app, deps);
   registerWorkspace(app, deps);
   registerFollowUps(app, deps);
+  registerCreditLimits(app, deps);
   registerConversations(app, deps);
   registerTraces(app, deps);
   registerDemo(app, deps);

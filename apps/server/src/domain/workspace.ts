@@ -253,16 +253,21 @@ function buildTodos(
     .all()
     .map((row) => {
       const quote = row.targetType === "quote" ? db.select().from(quotes).where(eq(quotes.id, row.targetId)).get() : undefined;
-      const customer = quote ? db.select().from(customers).where(eq(customers.id, quote.customerId)).get() : undefined;
+      const targetCustomer =
+        row.targetType === "customer" ? db.select().from(customers).where(eq(customers.id, row.targetId)).get() : undefined;
+      const customer = quote ? db.select().from(customers).where(eq(customers.id, quote.customerId)).get() : targetCustomer;
+      const payload = JSON.parse(row.payloadJson) as { requestedLimitCents?: number };
       return {
         id: `approval_${row.id}`,
         kind: "approval" as const,
-        title: customer ? `${customer.name} · ${actor.role === "manager" ? "待审批" : "审批处理中"}` : "待审批",
+        title: customer
+          ? `${customer.name} · ${row.type === "credit_limit" ? "提额申请" : actor.role === "manager" ? "待审批" : "审批处理中"}`
+          : "待审批",
         subtitle: row.reason,
         customerId: customer?.id,
-        amountCents: quote?.totalCents,
+        amountCents: quote?.totalCents ?? payload.requestedLimitCents,
         severity: "blocker" as const,
-        href: actor.role === "manager" ? "/approvals" : quote ? `/quotes/${quote.id}` : "/dashboard",
+        href: actor.role === "manager" ? "/approvals" : quote ? `/quotes/${quote.id}` : customer ? `/customers/${customer.id}` : "/dashboard",
       };
     });
 
