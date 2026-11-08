@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { TodoItem } from "@salespilot/shared";
+import { useRole } from "../state/store";
 import { Card, CardBody, CardHeader } from "./ui/Card";
 import { Badge } from "./ui/Badge";
 
@@ -26,6 +27,7 @@ export function TodoPanel({
     orders: TodoItem[];
   };
 }) {
+  const role = useRole();
   const all = [
     ...groups.overdue,
     ...groups.today,
@@ -55,7 +57,7 @@ export function TodoPanel({
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <Badge tone={item.severity === "blocker" ? "danger" : item.severity === "warning" ? "warning" : "info"}>
-                    {KIND_LABELS[item.kind] ?? item.kind}
+                    {item.kind === "approval" && role === "sales" ? "审批处理中" : KIND_LABELS[item.kind] ?? item.kind}
                   </Badge>
                   <span className="truncate font-medium text-slate-800">{item.title}</span>
                 </div>

@@ -1,11 +1,11 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { AppError, opportunityStage, riskLevel, type OpportunityStage, type RiskLevel } from "@salespilot/shared";
+import { AppError, CreateOpportunityInput, opportunityStage, riskLevel, type OpportunityStage, type RiskLevel } from "@salespilot/shared";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";
 import { resolveActor } from "../lib/actor.js";
 import { buildOpportunityDetail, buildWorkspace, listOpportunityViews } from "../domain/workspace.js";
-import { updateOpportunity } from "../domain/followUps.js";
+import { createOpportunity, updateOpportunity } from "../domain/followUps.js";
 import { executeTool, toolMap } from "../tools/index.js";
 
 const ERROR_STATUS: Record<string, number> = {
@@ -95,6 +95,17 @@ export function registerWorkspace(app: FastifyInstance, deps: { db: Db; sqlite: 
           ok: true,
           opportunities: listOpportunityViews(deps.db, actor, { stage, risk, customerId: query.customerId, ownerId: query.ownerId }),
         };
+      }),
+    );
+
+    app.post(
+      "/api/business/opportunities",
+      { attachValidation: true, schema: { tags: ["workspace"], summary: "Create an opportunity for a scoped customer" } },
+      handle(async (request) => {
+        const actor = actorOf(request);
+        const parsed = CreateOpportunityInput.safeParse(request.body);
+        if (!parsed.success) throw new AppError("VALIDATION_ERROR", "请求参数不合法", parsed.error.issues);
+        return { ok: true, opportunity: createOpportunity(deps.db, actor, parsed.data) };
       }),
     );
 

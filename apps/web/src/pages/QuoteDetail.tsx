@@ -11,7 +11,7 @@ import {
   type OrdersResponse,
   type QuoteDetailResponse,
 } from "../api/business";
-import { useAppStore } from "../state/store";
+import { useAppStore, useRole } from "../state/store";
 import { formatMoney } from "../lib/utils";
 import { formatDate, formatDateTime, parseRiskFlags, statusLabel, statusTone } from "../lib/status";
 import { PageHeader } from "../components/ui/Page";
@@ -22,10 +22,16 @@ import { Modal } from "../components/ui/Modal";
 import { EmptyState, ErrorBanner, LoadingBlock } from "../components/ui/Feedback";
 import { Table, TBody, TD, TH, THead, TR } from "../components/ui/Table";
 
+const APPROVAL_TYPE_LABELS: Record<string, string> = {
+  order_conversion: "转订单审批",
+  quote_price: "报价底线审批",
+};
+
 export function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { bumpData, pushToast } = useAppStore();
+  const role = useRole();
   const { data, loading, error, refetch } = useApi<QuoteDetailResponse>(id ? `/api/business/quotes/${id}` : null);
 
   const [convertPreview, setConvertPreview] = useState<ConvertPreviewResponse | null>(null);
@@ -39,6 +45,11 @@ export function QuoteDetail() {
   if (!data) return null;
 
   const { quote, customer, contact, lines, approval } = data;
+
+  function viewApproval() {
+    if (role === "manager") navigate("/approvals");
+    else document.getElementById("quote-approval")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   const riskFlags = parseRiskFlags(quote.riskFlags);
   const canConvert = quote.status === "approved";
 
@@ -112,7 +123,7 @@ export function QuoteDetail() {
           customer ? (
             <span>
               客户 <Link className="text-teal-700 hover:underline" to={`/customers/${customer.id}`}>{customer.name}</Link>
-              {contact ? ` · ${contact.name}（${contact.title}）` : ""} · 负责人 {quote.ownerId}
+              {contact ? ` · ${contact.name}（${contact.title}）` : ""} · 负责人 {quote.ownerName ?? quote.ownerId}
             </span>
           ) : undefined
         }
@@ -125,7 +136,7 @@ export function QuoteDetail() {
                 <ShoppingCart size={14} /> {convertLoading ? "准备中…" : "转订单"}
               </Button>
             )}
-            <Button size="sm" variant="secondary" onClick={() => navigate("/approvals")}>
+            <Button size="sm" variant="secondary" onClick={viewApproval}>
               <CheckSquare size={14} /> 查看审批
             </Button>
           </>
@@ -141,7 +152,11 @@ export function QuoteDetail() {
       {notice ? (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800">
           <span>{notice}</span>
-          <Link to="/approvals" className="font-medium text-amber-900 underline">查看审批</Link>
+          {role === "manager" ? (
+            <Link to="/approvals" className="font-medium text-amber-900 underline">查看审批</Link>
+          ) : (
+            <a href="#quote-approval" className="font-medium text-amber-900 underline">查看审批</a>
+          )}
         </div>
       ) : null}
 
@@ -213,18 +228,22 @@ export function QuoteDetail() {
         </Card>
       ) : null}
 
-      <Card>
+      <Card id="quote-approval">
         <CardHeader
           title="审批状态"
           description={approval ? "该报价关联一条审批记录" : "暂无关联审批"}
-          actions={approval ? <Link to="/approvals" className="text-[11px] font-medium text-teal-700 hover:underline">查看审批队列</Link> : null}
+          actions={
+            approval && role === "manager" ? (
+              <Link to="/approvals" className="text-[11px] font-medium text-teal-700 hover:underline">查看审批队列</Link>
+            ) : null
+          }
         />
         <CardBody>
           {approval ? (
             <div className="grid grid-cols-1 gap-3 text-xs md:grid-cols-2">
               <div className="rounded-lg bg-slate-50 p-3">
                 <div className="text-slate-400">类型</div>
-                <div className="mt-0.5 font-medium text-slate-800">{approval.type}</div>
+                <div className="mt-0.5 font-medium text-slate-800">{APPROVAL_TYPE_LABELS[approval.type] ?? approval.type}</div>
               </div>
               <div className="rounded-lg bg-slate-50 p-3">
                 <div className="text-slate-400">状态</div>

@@ -3,6 +3,7 @@ import type { Artifact } from "@salespilot/shared";
 import { formatMoney } from "../lib/utils";
 import { useAppStore } from "../state/store";
 import { apiPost, errorMessage } from "../api/business";
+import { FOLLOW_UP_TYPE_LABELS } from "../lib/opportunity";
 import { Button } from "./ui/Button";
 
 export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact; onCommitted: (result: any) => void }) {
@@ -20,15 +21,6 @@ export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact
   const isConvert = artifact.toolName === "convert_quote_to_order";
   const isFollowUp = artifact.toolName === "log_follow_up";
   const isNextAction = artifact.toolName === "update_opportunity_next_action";
-  const FOLLOW_UP_LABELS: Record<string, string> = {
-    call: "电话",
-    wechat: "微信",
-    email: "邮件",
-    meeting: "会议",
-    quote: "报价",
-    system: "系统动作",
-    ai_suggestion: "AI 建议",
-  };
   const confirmLabel = isConvert ? "确认提交" : isFollowUp ? "确认记录" : isNextAction ? "确认更新" : "确认生成";
 
   async function confirm() {
@@ -84,7 +76,7 @@ export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact
 
       {isFollowUp ? (
         <div className="mb-2 space-y-1 rounded-lg bg-slate-50 p-2 text-[11px] text-slate-600">
-          <div className="flex justify-between"><span>跟进方式</span><span className="font-medium">{FOLLOW_UP_LABELS[preview.type] ?? preview.type}</span></div>
+          <div className="flex justify-between"><span>跟进方式</span><span className="font-medium">{FOLLOW_UP_TYPE_LABELS[preview.type] ?? preview.type}</span></div>
           <div>内容：{preview.content}</div>
           {preview.result ? <div>结果：{preview.result}</div> : null}
           {preview.nextAction ? <div>下一步：{preview.nextAction}</div> : null}

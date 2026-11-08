@@ -17,6 +17,16 @@ export const RISK_LABELS: Record<RiskLevel, string> = {
   high: "高风险",
 };
 
+export const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
+  call: "电话",
+  wechat: "微信",
+  email: "邮件",
+  meeting: "会议",
+  quote: "报价",
+  system: "系统动作",
+  ai_suggestion: "AI 建议",
+};
+
 export function stageTone(stage: string): BadgeTone {
   if (stage === "won") return "success";
   if (stage === "lost") return "neutral";

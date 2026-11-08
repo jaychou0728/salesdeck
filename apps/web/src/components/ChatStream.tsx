@@ -175,19 +175,8 @@ export function ChatStream() {
           <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4" data-testid="chat-messages">
             {messages.length === 0 && !pendingApprovalId ? (
               <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-xs leading-relaxed text-slate-500">
-                我是销售助手。可以帮你查客户、查库存、报价、转订单或创建售后工单。业务页面里的操作也可以用这里的对话完成。
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {["今天哪些客户最值得跟进", "帮我推进华辰设计", "记录一条跟进"].map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      onClick={() => void send(prompt)}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-600 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
+                我是销售助手。可以帮你判断今天推进谁、查客户/库存、准备报价，或记录跟进和下一步。
+                <div className="mt-2 text-[11px] text-slate-400">也可以点下方的快捷问题开始。</div>
               </div>
             ) : null}
             {messages.map((message, index) => (

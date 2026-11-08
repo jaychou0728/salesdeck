@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Plus } from "lucide-react";
 import { useApi, type OpportunitiesResponse } from "../api/business";
 import { formatMoney } from "../lib/utils";
 import { formatDate } from "../lib/status";
 import { RISK_LABELS, STAGE_LABELS, priorityTone, riskTone, stageTone } from "../lib/opportunity";
 import { PageHeader } from "../components/ui/Page";
 import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
 import { Select } from "../components/ui/Field";
 import { EmptyState, ErrorBanner, LoadingBlock } from "../components/ui/Feedback";
 import { Table, TBody, TD, TH, THead, TR } from "../components/ui/Table";
+import { NewOpportunityModal } from "../components/NewOpportunityModal";
 
 const STAGES = ["lead", "needs", "solution", "quote", "negotiation", "won", "lost"];
 
@@ -17,6 +20,7 @@ export function Opportunities() {
   const [searchParams] = useSearchParams();
   const [stage, setStage] = useState(searchParams.get("stage") ?? "");
   const [risk, setRisk] = useState(searchParams.get("risk") ?? "");
+  const [createOpen, setCreateOpen] = useState(false);
   const params = new URLSearchParams();
   if (stage) params.set("stage", stage);
   if (risk) params.set("risk", risk);
@@ -31,6 +35,9 @@ export function Opportunities() {
         description="一个客户可以有多个商机；按阶段、风险与金额查看"
         actions={
           <>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus size={14} /> 新建商机
+            </Button>
             <Select aria-label="筛选阶段" value={stage} onChange={(event) => setStage(event.target.value)} className="w-32">
               <option value="">全部阶段</option>
               {STAGES.map((value) => (
@@ -52,7 +59,11 @@ export function Opportunities() {
 
       {data ? (
         data.opportunities.length === 0 ? (
-          <EmptyState title="暂无商机" description="调整筛选条件，或从客户页面创建商机。" />
+          <EmptyState
+            title="暂无商机"
+            description="调整筛选条件，或创建第一个商机开始跟踪金额、阶段和下一步。"
+            action={<Button size="sm" onClick={() => setCreateOpen(true)}>新建商机</Button>}
+          />
         ) : (
           <Table>
             <THead>
@@ -88,6 +99,12 @@ export function Opportunities() {
           </Table>
         )
       ) : null}
+
+      <NewOpportunityModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(opportunityId) => navigate(`/opportunities/${opportunityId}`)}
+      />
     </div>
   );
 }

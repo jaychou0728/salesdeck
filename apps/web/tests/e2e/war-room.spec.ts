@@ -46,6 +46,17 @@ test("AI promotes a customer with tool calls", async ({ page }) => {
   await expect(page.getByText("get_opportunity_detail").first()).toBeVisible();
 });
 
+test("creates an opportunity from the opportunities page", async ({ page }) => {
+  await page.goto("/opportunities");
+  await page.getByRole("button", { name: "新建商机" }).first().click();
+  await page.getByLabel("客户").selectOption("c_huachen");
+  await page.getByLabel("商机名称").fill("测试商机");
+  await page.getByLabel("金额（元）").fill("100000");
+  await page.getByRole("button", { name: "创建商机" }).click();
+  await expect(page).toHaveURL(/\/opportunities\/o_/, { timeout: 15_000 });
+  await expect(page.getByText("测试商机").first()).toBeVisible();
+});
+
 test("manager rejection clears the sales approval card and updates the next action", async ({ page }) => {
   await page.goto("/dashboard");
   await page.getByRole("button", { name: "AI 助手" }).click();

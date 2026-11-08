@@ -7,7 +7,7 @@ import { updateOpportunity } from "../api/workspace";
 import { useAppStore } from "../state/store";
 import { formatMoney } from "../lib/utils";
 import { formatDateTime, statusLabel, statusTone } from "../lib/status";
-import { RISK_LABELS, STAGE_LABELS, priorityLabel, priorityTone, riskTone, stageTone } from "../lib/opportunity";
+import { FOLLOW_UP_TYPE_LABELS, RISK_LABELS, STAGE_LABELS, priorityLabel, priorityTone, riskTone, stageTone } from "../lib/opportunity";
 import { PageHeader } from "../components/ui/Page";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
@@ -164,7 +164,7 @@ export function OpportunityDetail() {
             followUps.map((item) => (
               <div key={item.id} className="rounded-lg border border-slate-200 p-3 text-xs">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium text-slate-800">{item.type} · {item.content}</span>
+                  <span className="font-medium text-slate-800">{FOLLOW_UP_TYPE_LABELS[item.type] ?? item.type} · {item.content}</span>
                   <span className="text-[11px] text-slate-400">{formatDateTime(item.createdAt)}</span>
                 </div>
                 {item.result ? <div className="mt-1 text-slate-600">结果：{item.result}</div> : null}

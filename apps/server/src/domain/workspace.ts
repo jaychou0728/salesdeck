@@ -1,4 +1,4 @@
-import { and, desc, eq, getTableColumns, gte, inArray, isNull, lt, lte, or, type SQL } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, gte, inArray, isNull, lt, lte, type SQL } from "drizzle-orm";
 import type {
   Actor,
   OpportunityStage,
@@ -211,6 +211,7 @@ function buildHeadline(priorities: PriorityItem[]) {
 
 function buildTodos(
   db: Db,
+  actor: Actor,
   ownerIds: string[],
   priorities: PriorityItem[],
   now: number,
@@ -249,12 +250,12 @@ function buildTodos(
       return {
         id: `approval_${row.id}`,
         kind: "approval" as const,
-        title: customer ? `${customer.name} · 待审批` : "待审批",
+        title: customer ? `${customer.name} · ${actor.role === "manager" ? "待审批" : "审批处理中"}` : "待审批",
         subtitle: row.reason,
         customerId: customer?.id,
         amountCents: quote?.totalCents,
         severity: "blocker" as const,
-        href: "/approvals",
+        href: actor.role === "manager" ? "/approvals" : quote ? `/quotes/${quote.id}` : "/dashboard",
       };
     });
 
@@ -462,7 +463,7 @@ export function buildWorkspace(
     metrics,
     headline: buildHeadline(priorities),
     priorities: priorities.slice(0, 5),
-    todos: buildTodos(db, ownerIds, ranked, now),
+    todos: buildTodos(db, actor, ownerIds, ranked, now),
     risks: ranked.filter((item) => item.riskLevel === "high" || item.priority === "P0").slice(0, 5),
     ranking: actor.role === "manager" ? buildRanking(db, teamUsers, now) : undefined,
     recentQuotes,
@@ -523,7 +524,7 @@ export function buildOpportunityDetail(db: Db, actor: Actor, opportunityId: stri
   const history = db
     .select()
     .from(followUps)
-    .where(or(eq(followUps.opportunityId, opportunityId), eq(followUps.customerId, row.opportunity.customerId)))
+    .where(eq(followUps.opportunityId, opportunityId))
     .orderBy(desc(followUps.createdAt))
     .limit(20)
     .all();

@@ -57,4 +57,38 @@ describe("workspace routes", () => {
     expect(updated.statusCode).toBe(200);
     expect(updated.json().opportunity.nextAction).toBe("周五确认预算");
   });
+
+  it("creates opportunities for scoped customers", async () => {
+    const app = setup();
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/business/opportunities",
+      headers: as("u_sales_lin"),
+      payload: {
+        customerId: "c_huachen",
+        name: "测试商机",
+        amountCents: 1_000_000,
+        stage: "lead",
+        probability: 10,
+        expectedCloseDate: Date.now() + 7 * 86_400_000,
+      },
+    });
+    expect(created.statusCode).toBe(200);
+    expect(created.json().opportunity.name).toBe("测试商机");
+
+    const forbidden = await app.inject({
+      method: "POST",
+      url: "/api/business/opportunities",
+      headers: as("u_sales_lin"),
+      payload: {
+        customerId: "c_zhihang",
+        name: "越权商机",
+        amountCents: 1_000_000,
+        stage: "lead",
+        probability: 10,
+        expectedCloseDate: Date.now() + 7 * 86_400_000,
+      },
+    });
+    expect(forbidden.statusCode).toBe(403);
+  });
 });

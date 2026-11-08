@@ -5,7 +5,7 @@ import { useApi, type CustomerDetailResponse } from "../api/business";
 import { useAppStore } from "../state/store";
 import { formatMoney } from "../lib/utils";
 import { formatDate, formatDateTime, formatPercent, statusLabel, statusTone } from "../lib/status";
-import { RISK_LABELS, STAGE_LABELS, riskTone, stageTone } from "../lib/opportunity";
+import { FOLLOW_UP_TYPE_LABELS, RISK_LABELS, STAGE_LABELS, riskTone, stageTone } from "../lib/opportunity";
 import { PageHeader } from "../components/ui/Page";
 import { Card, CardBody, CardHeader } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
@@ -15,6 +15,7 @@ import { EmptyState, ErrorBanner, LoadingBlock } from "../components/ui/Feedback
 import { Table, TBody, TD, TH, THead, TR } from "../components/ui/Table";
 import { AIAssessmentCard } from "../components/AIAssessmentCard";
 import { FollowUpModal } from "../components/FollowUpModal";
+import { NewOpportunityModal } from "../components/NewOpportunityModal";
 
 const LEVEL_TONE = { A: "teal", B: "info", C: "neutral" } as const;
 
@@ -25,6 +26,7 @@ export function CustomerDetail() {
   const { data, loading, error, refetch } = useApi<CustomerDetailResponse>(id ? `/api/business/customers/${id}` : null);
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const [followUpOpportunityId, setFollowUpOpportunityId] = useState<string | undefined>();
+  const [newOpportunityOpen, setNewOpportunityOpen] = useState(false);
 
   if (loading && !data) return <LoadingBlock label="加载客户 360…" />;
   if (error) return <ErrorBanner message={error} onRetry={refetch} />;
@@ -53,6 +55,9 @@ export function CustomerDetail() {
           <>
             <Button size="sm" onClick={() => navigate(`/quotes/new?customerId=${customer.id}`)}>
               <Plus size={14} /> 新建报价
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => setNewOpportunityOpen(true)}>
+              <Plus size={14} /> 新建商机
             </Button>
             <Button
               size="sm"
@@ -83,7 +88,12 @@ export function CustomerDetail() {
           <CardHeader
             title="当前商机"
             description={`${activeOpportunities.length} 个进行中商机`}
-            actions={<Button size="sm" variant="ghost" onClick={() => navigate("/opportunities")}>全部商机</Button>}
+            actions={
+              <>
+                <Button size="sm" variant="ghost" onClick={() => navigate("/opportunities")}>全部商机</Button>
+                <Button size="sm" variant="secondary" onClick={() => setNewOpportunityOpen(true)}>新建商机</Button>
+              </>
+            }
           />
           <CardBody className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
@@ -102,7 +112,11 @@ export function CustomerDetail() {
             </div>
 
             {activeOpportunities.length === 0 ? (
-              <EmptyState title="暂无进行中商机" description="可以从 AI 助手或商机页面创建。" />
+              <EmptyState
+                title="暂无进行中商机"
+                description="为该客户创建第一个商机，开始跟踪金额、阶段和下一步。"
+                action={<Button size="sm" onClick={() => setNewOpportunityOpen(true)}>新建商机</Button>}
+              />
             ) : (
               activeOpportunities.map((item) => (
                 <div key={item.id} className="rounded-lg border border-slate-200 p-3">
@@ -225,7 +239,7 @@ export function CustomerDetail() {
             followUps.map((item) => (
               <div key={item.id} className="rounded-lg border border-slate-200 p-3 text-xs">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium text-slate-800">{item.type} · {item.content}</span>
+                  <span className="font-medium text-slate-800">{FOLLOW_UP_TYPE_LABELS[item.type] ?? item.type} · {item.content}</span>
                   <span className="text-[11px] text-slate-400">{formatDateTime(item.createdAt)}</span>
                 </div>
                 {item.result ? <div className="mt-1 text-slate-600">结果：{item.result}</div> : null}
@@ -329,6 +343,13 @@ export function CustomerDetail() {
         customerId={customer.id}
         opportunityId={followUpOpportunityId}
         onSaved={refetch}
+      />
+
+      <NewOpportunityModal
+        open={newOpportunityOpen}
+        onClose={() => setNewOpportunityOpen(false)}
+        initialCustomerId={customer.id}
+        onCreated={refetch}
       />
     </div>
   );

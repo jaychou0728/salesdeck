@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { AppError, type Actor, type FollowUpType, type OpportunityStage, type RiskLevel } from "@salespilot/shared";
+import {
+  AppError,
+  type Actor,
+  type CreateOpportunityInput,
+  type FollowUpType,
+  type OpportunityStage,
+  type RiskLevel,
+} from "@salespilot/shared";
 import type { Db } from "../db/client.js";
 import { customers, followUps, opportunities } from "../db/schema.js";
 import { scopedOwnerIds } from "../lib/actor.js";
@@ -68,6 +75,35 @@ export function recordFollowUp(db: Db, actor: Actor, input: RecordFollowUpInput)
     }
   });
   return { followUp: { id, ...input, actorId: actor.id, createdAt: now } };
+}
+
+export function createOpportunity(db: Db, actor: Actor, input: CreateOpportunityInput) {
+  const customer = db.select().from(customers).where(eq(customers.id, input.customerId)).get();
+  if (!customer) throw new AppError("NOT_FOUND", "客户不存在");
+  if (!scopedOwnerIds(db, actor).includes(customer.ownerId)) {
+    throw new AppError("FORBIDDEN", "无权为该客户创建商机");
+  }
+  const now = Date.now();
+  const id = `o_${randomUUID()}`;
+  db.insert(opportunities)
+    .values({
+      id,
+      customerId: input.customerId,
+      ownerId: customer.ownerId,
+      name: input.name,
+      amountCents: input.amountCents,
+      stage: input.stage,
+      probability: input.probability,
+      expectedCloseDate: input.expectedCloseDate,
+      nextAction: input.nextAction ?? null,
+      nextActionDueAt: input.nextActionDueAt ?? null,
+      riskLevel: input.riskLevel,
+      lastFollowUpAt: null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .run();
+  return db.select().from(opportunities).where(eq(opportunities.id, id)).get()!;
 }
 
 export function updateOpportunity(db: Db, actor: Actor, opportunityId: string, patch: UpdateOpportunityInput) {

@@ -17,6 +17,20 @@ export function fetchOpportunity(id: string) {
   return apiGet<OpportunityDetailResponse>(`/api/business/opportunities/${id}`);
 }
 
+export function createOpportunity(input: {
+  customerId: string;
+  name: string;
+  amountCents: number;
+  stage: string;
+  probability: number;
+  expectedCloseDate: number;
+  nextAction?: string;
+  nextActionDueAt?: number;
+  riskLevel?: string;
+}) {
+  return apiPost<{ ok: true; opportunity: { id: string; name: string } }>("/api/business/opportunities", input);
+}
+
 export function updateOpportunity(
   id: string,
   patch: {

@@ -33,7 +33,7 @@ export function AiDrawer() {
             </span>
             <div>
               <div className="text-sm font-semibold text-slate-900">AI 助手</div>
-              <div className="text-[11px] text-slate-500">用对话完成报价、转单与售后</div>
+              <div className="text-[11px] text-slate-500">帮你判断今天推进谁、下一步怎么做</div>
             </div>
           </div>
           <button type="button" onClick={closeAi} aria-label="关闭 AI 助手" className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">

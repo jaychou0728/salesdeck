@@ -142,6 +142,19 @@ export const GetOpportunityDetailInput = z.object({
 });
 export type GetOpportunityDetailInput = z.infer<typeof GetOpportunityDetailInput>;
 
+export const CreateOpportunityInput = z.object({
+  customerId: z.string().min(1),
+  name: z.string().min(1).max(100),
+  amountCents: moneyCents,
+  stage: opportunityStage.default("lead"),
+  probability: z.number().int().min(0).max(100).default(10),
+  expectedCloseDate: z.number().int().nonnegative(),
+  nextAction: z.string().max(200).optional(),
+  nextActionDueAt: z.number().int().nonnegative().optional(),
+  riskLevel: riskLevel.default("low"),
+});
+export type CreateOpportunityInput = z.infer<typeof CreateOpportunityInput>;
+
 export const SuggestActionsInput = z.object({
   actions: z
     .array(

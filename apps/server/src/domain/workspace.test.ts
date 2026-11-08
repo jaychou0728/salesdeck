@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Actor } from "@salespilot/shared";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
+import { approvals } from "../db/schema.js";
 import { buildCustomerAssessment, buildOpportunityDetail, buildWorkspace, listOpportunityViews } from "./workspace.js";
 
 const sales: Actor = { id: "u_sales_lin", name: "小林", role: "sales", teamId: "team_east" };
@@ -50,6 +51,7 @@ describe("workspace service", () => {
     expect(detail.opportunity.id).toBe("o_huachen_server");
     expect(detail.priority.priority).toBe("P0");
     expect(detail.followUps.length).toBeGreaterThan(0);
+    expect(detail.followUps.some((row) => row.id === "f_huachen_storage_1")).toBe(false);
     expect(() => buildOpportunityDetail(db, actor, "o_zhihang_server")).toThrow();
   });
 
@@ -59,5 +61,25 @@ describe("workspace service", () => {
     expect(all.length).toBe(8);
     const quoteStage = listOpportunityViews(db, actor, { stage: "quote" });
     expect(quoteStage.every((row) => row.stage === "quote")).toBe(true);
+  });
+
+  it("links sales approval todos to the quote and manager todos to the queue", () => {
+    const { db } = setup();
+    db.insert(approvals).values({
+      id: "ap_test",
+      type: "order_conversion",
+      targetType: "quote",
+      targetId: "q_seed_1",
+      requesterId: "u_sales_lin",
+      approverId: null,
+      status: "pending",
+      reason: "测试审批",
+      comment: null,
+      payloadJson: "{}",
+      createdAt: Date.now(),
+      decidedAt: null,
+    }).run();
+    expect(buildWorkspace(db, sales).todos.approvals[0].href).toBe("/quotes/q_seed_1");
+    expect(buildWorkspace(db, manager).todos.approvals[0].href).toBe("/approvals");
   });
 });
