@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore, useRole } from "../state/store";
-import { apiPost, errorMessage } from "../api/business";
+import { apiPost, errorMessage, useApi, type ApprovalDetailResponse } from "../api/business";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Field";
 
@@ -11,6 +11,14 @@ export function ApprovalCard({ approvalId }: { approvalId: string }) {
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const isManager = role === "manager";
+  const { data: approvalDetail } = useApi<ApprovalDetailResponse>(`/api/business/approvals/${approvalId}`);
+
+  // If the approval was decided elsewhere (e.g. the manager used the approvals
+  // page or the API), drop the stale card instead of showing it as pending.
+  useEffect(() => {
+    const status = approvalDetail?.approval.status;
+    if (status && status !== "pending") setPendingApproval(undefined);
+  }, [approvalDetail?.approval.status, setPendingApproval]);
 
   async function decide(decision: "approve" | "reject") {
     setLoading(decision);
