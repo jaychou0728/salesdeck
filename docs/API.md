@@ -13,6 +13,7 @@
   - `u_sales_lin` 销售小林（默认）
   - `u_manager_wang` 经理老王
 - 未传时按 `u_sales_lin` 处理；未知账号返回 `403 FORBIDDEN`。这是演示身份，不是生产认证。
+- 公网演示可设置 `DEMO_BASIC_AUTH=user:password`，所有请求需带 HTTP Basic Auth；`GET /health` 豁免，便于隧道健康检查。
 
 ### 1.2 响应信封
 

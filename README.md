@@ -65,17 +65,31 @@ curl -s http://localhost:3000/health
 明天在机房访问，用一条命令即可：
 
 ```bash
-pnpm demo:tunnel
+pnpm demo:tunnel        # 公网演示，默认 Mock
+pnpm demo:tunnel --ai   # 公网演示 + 真实模型（读取 .env 的 LLM_PROVIDER/Key）
 ```
 
 脚本会：
 
 1. 如缺少生产构建则执行 `pnpm build`；
-2. 以 `NODE_ENV=production` 启动 Fastify（端口 3000，API + 前端静态资源）；
+2. 以 `NODE_ENV=production` 启动 Fastify（端口 3000；被占用时自动换 3200）；
 3. 启动 `cloudflared` 快速隧道，打印 `https://xxx.trycloudflare.com` 公网地址；
-4. 把地址写入 `data/tunnel-url.txt`，按 `Ctrl+C` 同时停止服务和隧道。
+4. 自动生成一个访问账号（`demo / 随机 8 位密码`），浏览器打开公网地址时输入即可；
+5. 把地址写入 `data/tunnel-url.txt`，按 `Ctrl+C` 同时停止服务和隧道。
 
-> 公网演示默认强制 `LLM_PROVIDER=mock`，避免隧道被刷、消耗真实 API 额度。需要使用真实模型时显式运行：`LLM_PROVIDER=deepseek pnpm demo:tunnel`。
+固定访问密码（方便提前发给同学）：
+
+```bash
+DEMO_PASSWORD=mycode pnpm demo:tunnel --ai
+```
+
+也可以在 `.env` 配好真实模型后显式覆盖：
+
+```bash
+LLM_PROVIDER=deepseek pnpm demo:tunnel
+```
+
+> `--ai` 会让公网访客消耗你的 API 额度。务必设置访问密码；页面右上角 `AI: deepseek` 表示真实模型生效，`AI: Mock` 表示仍在 Mock 模式。公网仅含种子数据，`POST /api/demo/reset` 仅在 `DEMO_MODE=true` 时开放。
 
 前置：`cloudflared` 已安装（本机已安装）。没有时：
 

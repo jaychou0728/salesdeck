@@ -71,6 +71,14 @@ curl -s http://127.0.0.1:3000/health
 # {"ok":true,"provider":"litellm"}
 ```
 
+## 公网演示用真实模型
+
+```bash
+DEMO_PASSWORD=mycode pnpm demo:tunnel --ai
+```
+
+`--ai` 默认使用 `deepseek`，读取 `.env` 中的 Key；也可以显式 `LLM_PROVIDER=qwen pnpm demo:tunnel`。公网默认 Mock 是为了避免陌生人消耗 API 额度。
+
 ## 模型透传
 
 `POST /v1/chat/completions` 支持请求体里的 `model` 字段；不传时使用 `LLM_MODEL`。业务 Agent 默认使用 `.env` 中配置的模型。

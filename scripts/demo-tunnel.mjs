@@ -1,4 +1,5 @@
 import { spawn, execFileSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -6,7 +7,12 @@ import process from "node:process";
 const root = path.resolve(import.meta.dirname, "..");
 let port = Number(process.env.PORT ?? 3000);
 const withTunnel = !process.argv.includes("--no-tunnel");
+const forceAi = process.argv.includes("--ai");
+const authUser = process.env.DEMO_AUTH_USER ?? "demo";
+const demoPassword = process.env.DEMO_PASSWORD ?? randomBytes(4).toString("hex");
+const basicAuth = process.env.DEMO_BASIC_AUTH ?? `${authUser}:${demoPassword}`;
 const children = [];
+let startedServer = false;
 
 function log(message) {
   console.log(`[SalesDeck] ${message}`);
@@ -50,16 +56,12 @@ async function waitForServer() {
 }
 
 async function main() {
-  let reuse = false;
-  if (await probeHealth()) {
-    if (await servesApp()) {
-      reuse = true;
-    } else {
-      let candidate = 3200;
-      while (await probeHealth(candidate)) candidate++;
-      log(`端口 ${port} 已被非生产服务占用（只提供 API），改用 ${candidate}`);
-      port = candidate;
-    }
+  const reuse = process.argv.includes("--reuse") && (await probeHealth()) && (await servesApp());
+  if (!reuse && (await probeHealth())) {
+    let candidate = 3200;
+    while (await probeHealth(candidate)) candidate++;
+    log(`端口 ${port} 已被占用，改用 ${candidate}（需要复用请加 --reuse）`);
+    port = candidate;
   }
 
   if (!reuse) {
@@ -77,12 +79,14 @@ async function main() {
         DEMO_MODE: process.env.DEMO_MODE ?? "true",
         DATABASE_URL: process.env.DATABASE_URL ?? "./data/app.db",
         // Public demo defaults to Mock so a tunnel cannot burn real API credits.
-        // Opt in explicitly: LLM_PROVIDER=deepseek pnpm demo:tunnel
-        LLM_PROVIDER: process.env.LLM_PROVIDER ?? "mock",
+        // Opt in explicitly: pnpm demo:tunnel --ai
+        LLM_PROVIDER: process.env.LLM_PROVIDER ?? (forceAi ? "deepseek" : "mock"),
+        DEMO_BASIC_AUTH: basicAuth,
       },
       stdio: "inherit",
     });
     children.push(server);
+    startedServer = true;
     server.on("exit", (code) => {
       if (code && code !== 0) {
         log(`服务进程退出：${code}`);
@@ -135,6 +139,12 @@ async function main() {
         fs.writeFileSync(path.join(root, "data/tunnel-url.txt"), `${url}\n`);
         console.log("\n========================================================");
         console.log(`  SalesDeck 公网地址： ${url}`);
+        if (startedServer && basicAuth) {
+          const [user] = basicAuth.split(":");
+          console.log(`  访问账号： ${user} / ${basicAuth.split(":").slice(1).join(":")}`);
+        } else {
+          console.log("  访问密码： 复用已有服务（由该服务决定）");
+        }
         console.log(`  已写入 data/tunnel-url.txt`);
         console.log("  按 Ctrl+C 停止服务与隧道");
         console.log("========================================================\n");
