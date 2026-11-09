@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { AppError, type ConversionLineSelection } from "@salespilot/shared";
+import { AppError, type ConversionLineSelection } from "@salesdeck/shared";
 import type { ToolContext } from "../tools/types.js";
 import type { Db } from "../db/client.js";
 import { customers, inventory, opportunities, orderLines, orders, products, quoteLines, quotes, stockReservations, warehouses } from "../db/schema.js";

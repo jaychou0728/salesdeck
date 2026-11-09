@@ -1,4 +1,4 @@
-import type { OpportunityStage, PriorityItem, PriorityLevel, RiskLevel } from "@salespilot/shared";
+import type { OpportunityStage, PriorityItem, PriorityLevel, RiskLevel } from "@salesdeck/shared";
 
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;

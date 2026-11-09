@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AppError, CreditLimitRequestInput } from "@salespilot/shared";
+import { AppError, CreditLimitRequestInput } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";
 import { eq } from "drizzle-orm";

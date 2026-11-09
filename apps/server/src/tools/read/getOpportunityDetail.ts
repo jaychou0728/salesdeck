@@ -1,4 +1,4 @@
-import { AppError, GetOpportunityDetailInput, fail, ok } from "@salespilot/shared";
+import { AppError, GetOpportunityDetailInput, fail, ok } from "@salesdeck/shared";
 import { buildOpportunityDetail } from "../../domain/workspace.js";
 import type { ToolDefinition } from "../types.js";
 

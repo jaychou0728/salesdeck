@@ -42,6 +42,7 @@ export function registerOpenAiGateway(app: FastifyInstance, provider: ChatProvid
             messages: body.messages as never,
             tools: body.tools,
             stream: body.stream,
+            model: body.model,
           });
           if (body.stream) {
             reply.hijack();

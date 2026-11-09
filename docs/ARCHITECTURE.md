@@ -1,4 +1,4 @@
-# SalesPilot 架构说明
+# SalesDeck 架构说明
 
 本文描述**当前实现**，与代码保持一致；设计演进见 [`ADR.md`](ADR.md)，原始设计稿见 `docs/superpowers/specs/`。
 
@@ -18,7 +18,7 @@ Fastify 后端
   ├─ RAG                         切块 → n-gram 向量 → BM25+向量 RRF → 证据门槛 → 引用
   └─ SQLite + Drizzle            业务 / 知识 / 审计 / trace / 幂等 / 令牌
         │
-  Provider Adapter → DeepSeek（OpenAI 兼容）/ Mock（确定性）
+  Provider Adapter → 任意 OpenAI 兼容供应商 / LiteLLM 代理 / Mock（确定性）
 ```
 
 ## 2. 代码模块
@@ -26,7 +26,7 @@ Fastify 后端
 | 模块 | 路径 | 职责 |
 |---|---|---|
 | shared 契约 | `packages/shared/src` | Zod 输入 schema、类型、错误码、ToolResult / TraceEvent |
-| Provider | `apps/server/src/agent` | `ChatProvider` 接口、DeepSeek、Mock、LangGraph 图、trace 记录 |
+| Provider | `apps/server/src/agent` | `ChatProvider` 接口、OpenAI 兼容供应商（DeepSeek / OpenAI / 通义 / Kimi / 智谱 / OpenRouter / Ollama / LiteLLM…）、Mock、LangGraph 图、trace 记录 |
 | 数据库 | `apps/server/src/db` | Schema、迁移、seed 数据 |
 | 业务域 | `apps/server/src/domain` | 定价、库存分配、信用、状态机、权限、幂等、确认令牌、审批、订单 |
 | 工具 | `apps/server/src/tools` | 9 个读工具 + 5 个写工具、注册表与统一执行器 |
@@ -59,7 +59,9 @@ tools ──(pendingConfirmation / budgetExceeded / stepCount>=8)──→ respo
 
 状态字段：`messages`、`actor`、`traceId`、`intent`、`stepCount`、`pendingConfirmation`、`citations`、`toolCalls`、`toolCounts`、`budgetExceeded`、`finalText`。
 
-**Mock Provider** 按输入关键词返回确定性的工具调用脚本（晨报、客户 360、库存、价格、知识检索、售后、报价、转订单，以及主动推进、优先级、记录跟进、更新下一步），用于离线演示、协议测试与评测；除非显式 `LLM_PROVIDER=deepseek` 且存在 Key，否则自动使用 Mock。
+**Provider 选择**：`LLM_PROVIDER` 支持 `mock`、供应商预设（`deepseek/openai/qwen/kimi/zhipu/siliconflow/openrouter/groq/ollama/litellm`）或任意名称 + `LLM_BASE_URL/LLM_API_KEY/LLM_MODEL`。配置缺失时启动日志给出原因并降级 Mock，`/health` 的 `provider` 字段是实际生效值。可选 LiteLLM Python 代理统一多家厂商，见 `providers/README.md`。
+
+**Mock Provider** 按输入关键词返回确定性的工具调用脚本（晨报、客户 360、库存、价格、知识检索、售后、报价、转订单，以及主动推进、优先级、记录跟进、更新下一步），用于离线演示、协议测试与评测。
 
 ### 3.1 作战室数据流
 
@@ -133,7 +135,7 @@ type ToolResult<T> =
 - **流式协议**：`POST /api/chat` 使用 SSE，帧格式 `id: n` / `event: <type>` / `data: <json>`；事件类型包括 `trace.start`、`step.start`、`step.end`、`token`、`artifact`、`error`、`trace.end`。
 - **客户端**：`apps/web/src/api/sse.ts` 使用 `fetch` + `ReadableStream` 解析帧；`state/store.ts`（Zustand）累积消息、trace 与 artifact。
 - **可解释性**：`TraceTimeline` 展示每步名称、状态与入参/出参 JSON；`BusinessPanel` 读取 `/api/business/*` 展示客户、库存、报价、审批；trace 持久化后可通过 `GET /api/traces/:id` 回放。
-- **降级提示**：顶部固定标注 `Mock / DeepSeek`，避免把 Mock 结果误认为真实模型。
+- **降级提示**：服务端启动日志打印实际 Provider 与模型，`GET /health` 返回 `provider`；为 `mock` 即说明未接真实模型。
 
 ## 8. API 一览
 
@@ -178,11 +180,12 @@ type ToolResult<T> =
 
 - 开发：`pnpm dev`（shared 先构建，server 与 web 并行）。
 - 生产：`pnpm build` 后 `node apps/server/dist/index.js`；`NODE_ENV=production` 时 Fastify 托管 `apps/web/dist` 并对非 API 路径回退 `index.html`。
+- 公网演示：`pnpm demo:tunnel` 启动生产服务并拉起 Cloudflare 快速隧道，打印 `*.trycloudflare.com` 地址；固定域名可用命名隧道。
 - Docker：`Dockerfile` 多阶段构建 + `docker-compose.yml`（端口 3000、`./data` 持久化、healthcheck）。**本机未安装 Docker，镜像构建与 compose 启动尚未验证。**
 - 启动时自动迁移；空库自动 seed；每次启动按内容哈希幂等入库知识库。
 
 ## 11. 质量证据
 
-- Vitest：shared 14 个测试 + 服务端 140 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、拆单转订单、客户/联系人/商机/工单编辑、订单履约与取消回滚、优先级引擎、workspace 聚合、审批驳回与提额闭环、单据编号、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
+- Vitest：shared 14 个测试 + 服务端 146 个测试，覆盖定价、库存、信用、状态机、幂等、确认令牌、14 个工具契约、拆单转订单、客户/联系人/商机/工单编辑、订单履约与取消回滚、多厂商 Provider 配置、优先级引擎、workspace 聚合、审批驳回与提额闭环、单据编号、OpenAI 网关、SSE、路由、RAG；OpenAPI 暴露 20+ 条路径。
 - Playwright：19 条端到端测试（含作战室、商机创建与编辑、客户跟进、客户/联系人编辑、经理视图、信用提额与直接调额、AI 推进、审批驳回、拆单转单、订单履约、工单处理、重置确认与移动端导航）。
 - Agent 评测：30 条 golden cases，当前通过率 100%（见 `docs/EVAL_REPORT.md`）。

@@ -1,4 +1,4 @@
-export const WORKSPACE_NAME = "salespilot";
+export const WORKSPACE_NAME = "salesdeck";
 
 export * from "./errors.js";
 export * from "./types.js";

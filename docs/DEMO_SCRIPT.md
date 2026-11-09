@@ -1,4 +1,4 @@
-# SalesPilot 5 分钟演示脚本
+# SalesDeck 5 分钟演示脚本
 
 > 目标：用一条完整业务动线证明「自然语言 → 多工具编排 → 风控 → 人工确认/审批 → 落库 → 可解释回放」。
 > 默认 `LLM_PROVIDER=mock`，无需网络与 Key，结果确定；如需真实模型，提前设置 `LLM_PROVIDER=deepseek` 与 `DEEPSEEK_API_KEY`，并做好 Mock 兜底。
@@ -127,7 +127,7 @@ curl -X POST http://127.0.0.1:3000/api/approvals/<approvalId>/decide \
 **话术**：
 > 每一步都有工具名、入参、出参、状态和耗时，写操作还带令牌与幂等标记。这些事件同时落库，可以按 traceId 回放，方便复盘和审计。
 > 工程侧：shared 14 个测试 + 服务端 117 个测试、7 条 Playwright E2E、30 条 Agent 评测全部通过；OpenAPI 暴露 20+ 条路径；OpenAI 兼容网关可直接用 curl 调；Docker 配置已就绪（本机未装 Docker，尚未实机验证）。
-> 以上就是 SalesPilot：一个敢把每一步都给经理看的 AI 销售同事。
+> 以上就是 SalesDeck：一个敢把每一步都给经理看的 AI 销售同事。
 
 ---
 

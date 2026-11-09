@@ -1,4 +1,4 @@
-import { AppError, type OrderStatus, type QuoteStatus } from "@salespilot/shared";
+import { AppError, type OrderStatus, type QuoteStatus } from "@salesdeck/shared";
 
 export type { OrderStatus };
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import type { Actor } from "@salespilot/shared";
+import type { Actor } from "@salesdeck/shared";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { opportunities } from "../db/schema.js";

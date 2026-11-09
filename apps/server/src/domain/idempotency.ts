@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { idempotencyKeys } from "../db/schema.js";
 

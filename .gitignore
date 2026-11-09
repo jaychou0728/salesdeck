@@ -13,3 +13,5 @@ test-results/
 *.tsbuildinfo
 .vite/
 _temp/
+data/tunnel-url.txt
+

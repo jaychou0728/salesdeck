@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import type { TodoItem } from "@salespilot/shared";
+import type { TodoItem } from "@salesdeck/shared";
 import { useRole } from "../state/store";
 import { Card, CardBody, CardHeader } from "./ui/Card";
 import { Badge } from "./ui/Badge";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 import { makeTestDb } from "../test/helpers.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "./confirmation.js";
 import { withIdempotency } from "./idempotency.js";

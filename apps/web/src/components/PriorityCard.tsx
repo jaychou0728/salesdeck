@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { PriorityItem } from "@salespilot/shared";
+import type { PriorityItem } from "@salesdeck/shared";
 import { Link } from "react-router-dom";
 import { ArrowRight, Bot, ClipboardList, User } from "lucide-react";
 import { formatMoney } from "../lib/utils";

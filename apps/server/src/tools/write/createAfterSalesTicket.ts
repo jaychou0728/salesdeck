@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { CreateAfterSalesTicketInput, fail, ok } from "@salespilot/shared";
+import { CreateAfterSalesTicketInput, fail, ok } from "@salesdeck/shared";
 import { afterSalesTickets, customers, knowledgeChunks, orders, products } from "../../db/schema.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { withIdempotency } from "../../domain/idempotency.js";

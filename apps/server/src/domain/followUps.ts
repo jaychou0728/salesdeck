@@ -7,7 +7,7 @@ import {
   type FollowUpType,
   type OpportunityStage,
   type RiskLevel,
-} from "@salespilot/shared";
+} from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { customers, followUps, opportunities } from "../db/schema.js";
 import { scopedOwnerIds } from "../lib/actor.js";

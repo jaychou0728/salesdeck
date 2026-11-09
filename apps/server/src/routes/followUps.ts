@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { resolveActor } from "../lib/actor.js";
 import { recordFollowUp } from "../domain/followUps.js";

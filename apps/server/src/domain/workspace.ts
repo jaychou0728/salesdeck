@@ -5,8 +5,8 @@ import type {
   PriorityItem,
   RiskLevel,
   TodoItem,
-} from "@salespilot/shared";
-import { AppError } from "@salespilot/shared";
+} from "@salesdeck/shared";
+import { AppError } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import {
   afterSalesTickets,

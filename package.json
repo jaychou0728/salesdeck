@@ -1,19 +1,21 @@
 {
-  "name": "sales-pilot",
+  "name": "sales-deck",
   "private": true,
   "packageManager": "pnpm@11.17.0",
   "engines": {
     "node": ">=22.18"
   },
   "scripts": {
-    "dev": "pnpm --filter @salespilot/shared build && pnpm -r --parallel --if-present run dev",
-    "build": "pnpm --filter @salespilot/shared build && pnpm --filter @salespilot/server build && pnpm --filter @salespilot/web build",
-    "typecheck": "pnpm --filter @salespilot/shared build && pnpm -r --if-present run typecheck",
-    "test": "pnpm --filter @salespilot/shared build && pnpm -r --if-present run test",
-    "test:e2e": "pnpm --filter @salespilot/shared build && pnpm --filter @salespilot/web test:e2e",
-    "eval": "pnpm --filter @salespilot/server eval",
-    "db:generate": "pnpm --filter @salespilot/server db:generate",
-    "db:migrate": "pnpm --filter @salespilot/server db:migrate",
-    "db:seed": "pnpm --filter @salespilot/server db:seed"
+    "dev": "pnpm --filter @salesdeck/shared build && pnpm -r --parallel --if-present run dev",
+    "build": "pnpm --filter @salesdeck/shared build && pnpm --filter @salesdeck/server build && pnpm --filter @salesdeck/web build",
+    "typecheck": "pnpm --filter @salesdeck/shared build && pnpm -r --if-present run typecheck",
+    "test": "pnpm --filter @salesdeck/shared build && pnpm -r --if-present run test",
+    "test:e2e": "pnpm --filter @salesdeck/shared build && pnpm --filter @salesdeck/web test:e2e",
+    "eval": "pnpm --filter @salesdeck/server eval",
+    "demo": "node scripts/demo-tunnel.mjs --no-tunnel",
+    "demo:tunnel": "node scripts/demo-tunnel.mjs",
+    "db:generate": "pnpm --filter @salesdeck/server db:generate",
+    "db:migrate": "pnpm --filter @salesdeck/server db:migrate",
+    "db:seed": "pnpm --filter @salesdeck/server db:seed"
   }
 }

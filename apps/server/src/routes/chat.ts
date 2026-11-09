@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
-import { ChatRequest } from "@salespilot/shared";
+import { ChatRequest } from "@salesdeck/shared";
 import type { ChatMessage, ChatProvider } from "../agent/provider.js";
 import { buildAgentGraph } from "../agent/graph.js";
 import { TraceRecorder } from "../agent/trace.js";

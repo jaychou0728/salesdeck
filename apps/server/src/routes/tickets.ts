@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 import type Database from "better-sqlite3";
 import type { Db } from "../db/client.js";
 import { afterSalesTickets, auditLogs, customers } from "../db/schema.js";

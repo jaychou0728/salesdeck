@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { AppError, CreateOpportunityInput, opportunityStage, riskLevel, type OpportunityStage, type RiskLevel } from "@salespilot/shared";
+import { AppError, CreateOpportunityInput, opportunityStage, riskLevel, type OpportunityStage, type RiskLevel } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";
 import { resolveActor } from "../lib/actor.js";

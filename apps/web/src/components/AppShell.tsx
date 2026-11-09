@@ -96,8 +96,8 @@ export function AppShell() {
             {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-[11px] font-bold text-white">SP</div>
-            <div className="text-sm font-semibold tracking-tight text-slate-900">SalesPilot</div>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-[11px] font-bold text-white">SD</div>
+            <div className="text-sm font-semibold tracking-tight text-slate-900">SalesDeck</div>
           </div>
 
           <nav className="hidden items-center gap-0.5 overflow-x-auto md:flex" aria-label="主导航">

@@ -28,7 +28,7 @@ importers:
       '@langchain/langgraph':
         specifier: ^0.2.19
         version: 0.2.19(@langchain/core@0.3.80(openai@4.68.0(zod@3.23.8)))
-      '@salespilot/shared':
+      '@salesdeck/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       better-sqlite3:
@@ -80,7 +80,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@salespilot/shared':
+      '@salesdeck/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       clsx:

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Artifact } from "@salespilot/shared";
+import type { Artifact } from "@salesdeck/shared";
 import { formatMoney } from "../lib/utils";
 import { useAppStore } from "../state/store";
 import { apiPost, errorMessage } from "../api/business";

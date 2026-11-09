@@ -1,4 +1,4 @@
-import type { CustomerLevel } from "@salespilot/shared";
+import type { CustomerLevel } from "@salesdeck/shared";
 
 export interface PriceRule {
   id: string;

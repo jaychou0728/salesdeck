@@ -1,5 +1,5 @@
 import { eq, like, or } from "drizzle-orm";
-import { CheckInventoryInput, fail, ok } from "@salespilot/shared";
+import { CheckInventoryInput, fail, ok } from "@salesdeck/shared";
 import { inventory, products, warehouses } from "../../db/schema.js";
 import { available, planAllocation } from "../../domain/inventory.js";
 import type { ToolDefinition } from "../types.js";

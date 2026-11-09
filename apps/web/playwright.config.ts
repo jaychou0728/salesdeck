@@ -7,13 +7,13 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:5174", trace: "on-first-retry" },
   webServer: [
     {
-      command: "pnpm --filter @salespilot/server dev",
+      command: "pnpm --filter @salesdeck/server dev",
       port: 3101,
       reuseExistingServer: false,
       env: { PORT: "3101", DATABASE_URL: "./data/e2e.db", DEMO_MODE: "true", LLM_PROVIDER: "mock" },
     },
     {
-      command: "pnpm --filter @salespilot/web dev",
+      command: "pnpm --filter @salesdeck/web dev",
       port: 5174,
       reuseExistingServer: false,
       env: { VITE_API_TARGET: "http://127.0.0.1:3101", VITE_PORT: "5174" },

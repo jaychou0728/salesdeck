@@ -1,5 +1,5 @@
 {
-  "name": "@salespilot/web",
+  "name": "@salesdeck/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@salespilot/shared": "workspace:*",
+    "@salesdeck/shared": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^0.451.0",
     "react": "^18.3.1",

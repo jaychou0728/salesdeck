@@ -1,5 +1,5 @@
 import { eq, inArray } from "drizzle-orm";
-import type { Citation } from "@salespilot/shared";
+import type { Citation } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { knowledgeChunks, knowledgeDocs } from "../db/schema.js";
 import { cosine, hashEmbedding } from "./embeddings.js";

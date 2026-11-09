@@ -1,4 +1,4 @@
-import { AppError, type ErrorCode } from "@salespilot/shared";
+import { AppError, type ErrorCode } from "@salesdeck/shared";
 import { describe, expect, it } from "vitest";
 import { checkCredit } from "./credit.js";
 import { assertOrderTransition, assertQuoteTransition, assertQuoteConvertible } from "./state.js";

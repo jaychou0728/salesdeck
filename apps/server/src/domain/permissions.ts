@@ -1,4 +1,4 @@
-import { AppError, type Actor } from "@salespilot/shared";
+import { AppError, type Actor } from "@salesdeck/shared";
 
 export function assertCustomerAccess(actor: Actor, customer: { ownerId: string }) {
   if (actor.role === "sales" && customer.ownerId !== actor.id) {

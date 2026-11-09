@@ -1,5 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { GetPricingInput, fail, ok } from "@salespilot/shared";
+import { GetPricingInput, fail, ok } from "@salesdeck/shared";
 import { customers, priceRules, products } from "../../db/schema.js";
 import { assertCustomerAccess } from "../../domain/permissions.js";
 import { computeQuoteTotals, computeUnitPrice } from "../../domain/pricing.js";

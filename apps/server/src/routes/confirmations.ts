@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { ConfirmRequest } from "@salespilot/shared";
+import { ConfirmRequest } from "@salesdeck/shared";
 import { executeTool, toolMap } from "../tools/index.js";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";

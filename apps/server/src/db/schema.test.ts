@@ -1,6 +1,6 @@
 import path from "node:path";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { FOLLOW_UP_TYPES, OPPORTUNITY_STAGES, RISK_LEVELS } from "@salespilot/shared";
+import { FOLLOW_UP_TYPES, OPPORTUNITY_STAGES, RISK_LEVELS } from "@salesdeck/shared";
 import { describe, expect, it } from "vitest";
 import { makeTestDb } from "../test/helpers.js";
 import { followUps, opportunities } from "./schema.js";

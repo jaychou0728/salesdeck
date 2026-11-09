@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { ConvertQuoteToOrderInput, fail, ok } from "@salespilot/shared";
+import { ConvertQuoteToOrderInput, fail, ok } from "@salesdeck/shared";
 import { customers, inventory, quoteLines, quotes, warehouses } from "../../db/schema.js";
 import { createApproval } from "../../domain/approvals.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";

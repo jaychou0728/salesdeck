@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { AppError, type ConversionLineSelection } from "@salespilot/shared";
+import { AppError, type ConversionLineSelection } from "@salesdeck/shared";
 import { approvals, customers, opportunities, quotes, users } from "../db/schema.js";
 import { assertManager } from "./permissions.js";
 import { withIdempotency } from "./idempotency.js";

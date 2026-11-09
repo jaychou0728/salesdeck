@@ -1,0 +1,3 @@
+# Optional multi-vendor gateway. Install into any Python 3.10+ environment:
+#   python -m pip install -r providers/requirements.txt
+litellm[proxy]>=1.60,<2

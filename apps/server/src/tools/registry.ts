@@ -1,4 +1,4 @@
-import { AppError, fail } from "@salespilot/shared";
+import { AppError, fail } from "@salesdeck/shared";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { auditLogs } from "../db/schema.js";
 import type { ToolContext, ToolDefinition, ToolOutcome } from "./types.js";

@@ -1,4 +1,4 @@
-# SalesPilot 销售作战室 Implementation Plan
+# SalesDeck 销售作战室 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -55,7 +55,7 @@ mkdir -p apps/server/src apps/web/src packages/shared/src docs knowledge scripts
 
 ```json
 {
-  "name": "sales-pilot",
+  "name": "sales-deck",
   "private": true,
   "packageManager": "pnpm@11.17.0",
   "scripts": {
@@ -63,11 +63,11 @@ mkdir -p apps/server/src apps/web/src packages/shared/src docs knowledge scripts
     "build": "pnpm -r --if-present run build",
     "typecheck": "pnpm -r --if-present run typecheck",
     "test": "pnpm -r --if-present run test",
-    "test:e2e": "pnpm --filter @salespilot/web test:e2e",
-    "eval": "pnpm --filter @salespilot/server eval",
-    "db:generate": "pnpm --filter @salespilot/server db:generate",
-    "db:migrate": "pnpm --filter @salespilot/server db:migrate",
-    "db:seed": "pnpm --filter @salespilot/server db:seed"
+    "test:e2e": "pnpm --filter @salesdeck/web test:e2e",
+    "eval": "pnpm --filter @salesdeck/server eval",
+    "db:generate": "pnpm --filter @salesdeck/server db:generate",
+    "db:migrate": "pnpm --filter @salesdeck/server db:migrate",
+    "db:seed": "pnpm --filter @salesdeck/server db:seed"
   }
 }
 ```
@@ -133,7 +133,7 @@ EMBEDDING_PROVIDER=local
 
 ```json
 {
-  "name": "@salespilot/shared",
+  "name": "@salesdeck/shared",
   "version": "0.1.0",
   "type": "module",
   "main": "./src/index.ts",
@@ -168,7 +168,7 @@ EMBEDDING_PROVIDER=local
 `packages/shared/src/index.ts`：
 
 ```ts
-export const WORKSPACE_NAME = "salespilot";
+export const WORKSPACE_NAME = "salesdeck";
 ```
 
 `packages/shared/src/index.test.ts`：
@@ -179,7 +179,7 @@ import { WORKSPACE_NAME } from "./index.js";
 
 describe("workspace", () => {
   it("loads shared package", () => {
-    expect(WORKSPACE_NAME).toBe("salespilot");
+    expect(WORKSPACE_NAME).toBe("salesdeck");
   });
 });
 ```
@@ -188,7 +188,7 @@ describe("workspace", () => {
 
 ```json
 {
-  "name": "@salespilot/server",
+  "name": "@salesdeck/server",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
@@ -209,7 +209,7 @@ describe("workspace", () => {
     "@fastify/swagger-ui": "^5.0.0",
     "@langchain/core": "^0.3.15",
     "@langchain/langgraph": "^0.2.19",
-    "@salespilot/shared": "workspace:*",
+    "@salesdeck/shared": "workspace:*",
     "better-sqlite3": "^12.0.0",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.36.0",
@@ -248,7 +248,7 @@ describe("workspace", () => {
 
 ```json
 {
-  "name": "@salespilot/web",
+  "name": "@salesdeck/web",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
@@ -258,7 +258,7 @@ describe("workspace", () => {
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@salespilot/shared": "workspace:*",
+    "@salesdeck/shared": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^0.451.0",
     "react": "^18.3.1",
@@ -298,7 +298,7 @@ describe("workspace", () => {
 
 ```bash
 pnpm install
-pnpm --filter @salespilot/shared test
+pnpm --filter @salesdeck/shared test
 pnpm -r --if-present run typecheck
 ```
 
@@ -377,7 +377,7 @@ describe("shared schemas", () => {
 - [ ] **Step 2: 跑测试确认失败**
 
 ```bash
-pnpm --filter @salespilot/shared test
+pnpm --filter @salesdeck/shared test
 ```
 
 Expected：FAIL，`Cannot find module './schemas.js'`。
@@ -390,7 +390,7 @@ Expected：FAIL，`Cannot find module './schemas.js'`。
 
 ```json
 {
-  "name": "@salespilot/shared",
+  "name": "@salesdeck/shared",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -427,15 +427,15 @@ Expected：FAIL，`Cannot find module './schemas.js'`。
 
 ```json
 "scripts": {
-  "dev": "pnpm --filter @salespilot/shared build && pnpm -r --parallel --if-present run dev",
-  "build": "pnpm --filter @salespilot/shared build && pnpm --filter @salespilot/server build && pnpm --filter @salespilot/web build",
-  "typecheck": "pnpm --filter @salespilot/shared build && pnpm -r --if-present run typecheck",
-  "test": "pnpm --filter @salespilot/shared build && pnpm -r --if-present run test",
-  "test:e2e": "pnpm --filter @salespilot/web test:e2e",
-  "eval": "pnpm --filter @salespilot/server eval",
-  "db:generate": "pnpm --filter @salespilot/server db:generate",
-  "db:migrate": "pnpm --filter @salespilot/server db:migrate",
-  "db:seed": "pnpm --filter @salespilot/server db:seed"
+  "dev": "pnpm --filter @salesdeck/shared build && pnpm -r --parallel --if-present run dev",
+  "build": "pnpm --filter @salesdeck/shared build && pnpm --filter @salesdeck/server build && pnpm --filter @salesdeck/web build",
+  "typecheck": "pnpm --filter @salesdeck/shared build && pnpm -r --if-present run typecheck",
+  "test": "pnpm --filter @salesdeck/shared build && pnpm -r --if-present run test",
+  "test:e2e": "pnpm --filter @salesdeck/web test:e2e",
+  "eval": "pnpm --filter @salesdeck/server eval",
+  "db:generate": "pnpm --filter @salesdeck/server db:generate",
+  "db:migrate": "pnpm --filter @salesdeck/server db:migrate",
+  "db:seed": "pnpm --filter @salesdeck/server db:seed"
 }
 ```
 
@@ -742,7 +742,7 @@ export type ApprovalDecision = z.infer<typeof ApprovalDecision>;
 `packages/shared/src/index.ts`：
 
 ```ts
-export const WORKSPACE_NAME = "salespilot";
+export const WORKSPACE_NAME = "salesdeck";
 
 export * from "./errors.js";
 export * from "./types.js";
@@ -752,8 +752,8 @@ export * from "./schemas.js";
 - [ ] **Step 4: 构建并跑测试确认通过**
 
 ```bash
-pnpm --filter @salespilot/shared build
-pnpm --filter @salespilot/shared test
+pnpm --filter @salesdeck/shared build
+pnpm --filter @salesdeck/shared test
 pnpm -r --if-present run typecheck
 ```
 
@@ -1395,9 +1395,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 - [ ] **Step 4: 跑测试确认通过**
 
 ```bash
-pnpm --filter @salespilot/server test
-DATABASE_URL=./data/seed-check.db pnpm --filter @salespilot/server db:migrate
-DATABASE_URL=./data/seed-check.db pnpm --filter @salespilot/server db:seed
+pnpm --filter @salesdeck/server test
+DATABASE_URL=./data/seed-check.db pnpm --filter @salesdeck/server db:migrate
+DATABASE_URL=./data/seed-check.db pnpm --filter @salesdeck/server db:seed
 rm -f apps/server/data/seed-check.db apps/server/data/seed-check.db-*
 ```
 
@@ -1505,7 +1505,7 @@ Expected：FAIL，找不到 `pricing.js` / `inventory.js`。
 `apps/server/src/domain/pricing.ts`：
 
 ```ts
-import type { CustomerLevel } from "@salespilot/shared";
+import type { CustomerLevel } from "@salesdeck/shared";
 
 export interface PriceRule {
   id: string;
@@ -1583,7 +1583,7 @@ export function computeQuoteTotals(lines: TaxableLine[]) {
 
 ```ts
 import type Database from "better-sqlite3";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 
 export interface InventoryView {
   warehouseId: string;
@@ -1752,7 +1752,7 @@ export function checkCredit(customer: CreditSnapshot, orderTotalCents: number) {
 `apps/server/src/domain/state.ts`：
 
 ```ts
-import { AppError, type QuoteStatus } from "@salespilot/shared";
+import { AppError, type QuoteStatus } from "@salesdeck/shared";
 
 const QUOTE_TRANSITIONS: Record<QuoteStatus, QuoteStatus[]> = {
   draft: ["approved", "pending_approval", "cancelled"],
@@ -1798,7 +1798,7 @@ export function assertOrderTransition(from: OrderStatus, to: OrderStatus) {
 `apps/server/src/domain/permissions.ts`：
 
 ```ts
-import { AppError, type Actor } from "@salespilot/shared";
+import { AppError, type Actor } from "@salesdeck/shared";
 
 export function assertCustomerAccess(actor: Actor, customer: { ownerId: string }) {
   if (actor.role === "sales" && customer.ownerId !== actor.id) {
@@ -1818,8 +1818,8 @@ export function assertManager(actor: Actor) {
 - [ ] **Step 4: 跑测试确认通过**
 
 ```bash
-pnpm --filter @salespilot/server test
-pnpm --filter @salespilot/server typecheck
+pnpm --filter @salesdeck/server test
+pnpm --filter @salesdeck/server typecheck
 ```
 
 Expected：rules 7 passed（含非 approved 报价、销售可访问自己客户）；typecheck clean。
@@ -1846,7 +1846,7 @@ git commit -m "feat: add credit, state and permission rules"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 import { makeTestDb } from "../test/helpers.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "./confirmation.js";
 import { withIdempotency } from "./idempotency.js";
@@ -1922,7 +1922,7 @@ Expected：FAIL，模块不存在。
 ```ts
 import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { idempotencyKeys } from "../db/schema.js";
 
@@ -1973,7 +1973,7 @@ export function withIdempotency<T>(
 ```ts
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { confirmationTokens } from "../db/schema.js";
 import { sha256, stableStringify } from "./idempotency.js";
@@ -2076,7 +2076,7 @@ import { describe, expect, it } from "vitest";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { executeTool, readTools } from "./index.js";
-import type { Actor, TraceEvent } from "@salespilot/shared";
+import type { Actor, TraceEvent } from "@salesdeck/shared";
 
 const sales: Actor = { id: "u_sales_lin", name: "小林", role: "sales", teamId: "team_east" };
 const manager: Actor = { id: "u_manager_wang", name: "老王", role: "manager", teamId: "team_east" };
@@ -2161,7 +2161,7 @@ Expected：FAIL，工具模块不存在。
 
 ```ts
 import type { z } from "zod";
-import type { Actor, Artifact, Role, ToolResult, TraceEvent } from "@salespilot/shared";
+import type { Actor, Artifact, Role, ToolResult, TraceEvent } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";
 
@@ -2191,7 +2191,7 @@ export interface ToolDefinition<I = unknown, O = unknown> {
 `apps/server/src/tools/registry.ts`：
 
 ```ts
-import { AppError, fail, ok, type TraceEvent } from "@salespilot/shared";
+import { AppError, fail, ok, type TraceEvent } from "@salesdeck/shared";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { auditLogs } from "../db/schema.js";
 import type { ToolContext, ToolDefinition, ToolOutcome } from "./types.js";
@@ -2272,7 +2272,7 @@ export function toolSpecs(definitions: ToolDefinition<any, any>[]) {
 
 ```ts
 import { and, eq, like, or } from "drizzle-orm";
-import { ok, SearchCustomersInput } from "@salespilot/shared";
+import { ok, SearchCustomersInput } from "@salesdeck/shared";
 import { contacts, customers } from "../../db/schema.js";
 import type { ToolDefinition } from "../types.js";
 
@@ -2317,7 +2317,7 @@ export const searchCustomers: ToolDefinition<SearchCustomersInput, unknown> = {
 
 ```ts
 import { desc, eq } from "drizzle-orm";
-import { GetCustomer360Input, ok } from "@salespilot/shared";
+import { GetCustomer360Input, ok } from "@salesdeck/shared";
 import { contacts, customers, orders, quotes } from "../../db/schema.js";
 import { assertCustomerAccess } from "../../domain/permissions.js";
 import type { ToolDefinition } from "../types.js";
@@ -2357,7 +2357,7 @@ export const getCustomer360: ToolDefinition<GetCustomer360Input, unknown> = {
 
 ```ts
 import { eq, like, or } from "drizzle-orm";
-import { CheckInventoryInput, ok } from "@salespilot/shared";
+import { CheckInventoryInput, ok } from "@salesdeck/shared";
 import { inventory, products, warehouses } from "../../db/schema.js";
 import { available, planAllocation } from "../../domain/inventory.js";
 import type { ToolDefinition } from "../types.js";
@@ -2414,7 +2414,7 @@ export const checkInventory: ToolDefinition<CheckInventoryInput, unknown> = {
 
 ```ts
 import { and, eq, gte, inArray, lte, or } from "drizzle-orm";
-import { GetPricingInput, ok } from "@salespilot/shared";
+import { GetPricingInput, ok } from "@salesdeck/shared";
 import { customers, priceRules, products } from "../../db/schema.js";
 import { assertCustomerAccess } from "../../domain/permissions.js";
 import { computeQuoteTotals, computeUnitPrice } from "../../domain/pricing.js";
@@ -2531,7 +2531,7 @@ import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { allTools, executeTool } from "./index.js";
 import { approvals, customers, orders, priceRules } from "../db/schema.js";
-import type { Actor } from "@salespilot/shared";
+import type { Actor } from "@salesdeck/shared";
 
 const sales: Actor = { id: "u_sales_lin", name: "小林", role: "sales", teamId: "team_east" };
 const manager: Actor = { id: "u_manager_wang", name: "老王", role: "manager", teamId: "team_east" };
@@ -2668,7 +2668,7 @@ Expected：FAIL，写工具不存在。
 ```ts
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { CreateQuoteInput, ok, fail } from "@salespilot/shared";
+import { CreateQuoteInput, ok, fail } from "@salesdeck/shared";
 import { contacts, customers, priceRules, products, quoteLines, quotes } from "../../db/schema.js";
 import { createApproval } from "../../domain/approvals.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
@@ -2782,7 +2782,7 @@ export const createQuote: ToolDefinition<CreateQuoteInput, unknown> = {
 ```ts
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 import type { ToolContext } from "../tools/types.js";
 import { customers, inventory, orderLines, orders, products, quoteLines, quotes, stockReservations, warehouses } from "../db/schema.js";
 import { checkCredit } from "./credit.js";
@@ -2856,7 +2856,7 @@ export function createOrderFromQuote(
 
 ```ts
 import { eq } from "drizzle-orm";
-import { ConvertQuoteToOrderInput, fail, ok } from "@salespilot/shared";
+import { ConvertQuoteToOrderInput, fail, ok } from "@salesdeck/shared";
 import { customers, quoteLines, quotes } from "../../db/schema.js";
 import { createApproval } from "../../domain/approvals.js";
 import { createOrderFromQuote } from "../../domain/orders.js";
@@ -2925,7 +2925,7 @@ export const convertQuoteToOrder: ToolDefinition<ConvertQuoteToOrderInput, unkno
 ```ts
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 import { approvals, quotes } from "../db/schema.js";
 import { assertManager } from "./permissions.js";
 import { withIdempotency } from "./idempotency.js";
@@ -2991,7 +2991,7 @@ export function decideApproval(
 ```ts
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { CreateAfterSalesTicketInput, fail, ok } from "@salespilot/shared";
+import { CreateAfterSalesTicketInput, fail, ok } from "@salesdeck/shared";
 import { afterSalesTickets, customers, knowledgeChunks, products } from "../../db/schema.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { withIdempotency } from "../../domain/idempotency.js";
@@ -3055,7 +3055,7 @@ export const createAfterSalesTicket: ToolDefinition<CreateAfterSalesTicketInput,
 
 ```ts
 import { and, eq, gte, lte } from "drizzle-orm";
-import { GetSalesBriefingInput, ok } from "@salespilot/shared";
+import { GetSalesBriefingInput, ok } from "@salesdeck/shared";
 import { customers, inventory, products, quotes } from "../../db/schema.js";
 import type { ToolDefinition } from "../types.js";
 
@@ -3390,7 +3390,7 @@ export function cosine(a: number[], b: number[]): number {
 `apps/server/src/rag/retrieve.ts`：
 
 ```ts
-import type { Citation } from "@salespilot/shared";
+import type { Citation } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { knowledgeChunks, knowledgeDocs } from "../db/schema.js";
 import { cosine, hashEmbedding } from "./embeddings.js";
@@ -3533,7 +3533,7 @@ export function ingestKnowledge(db: Db, dir: string) {
 `apps/server/src/tools/read/searchKnowledge.ts`：
 
 ```ts
-import { ok, SearchKnowledgeInput } from "@salespilot/shared";
+import { ok, SearchKnowledgeInput } from "@salesdeck/shared";
 import { retrieve } from "../../rag/retrieve.js";
 import type { ToolDefinition } from "../types.js";
 
@@ -3987,7 +3987,7 @@ export const SYSTEM_PROMPT = `你是云启科技的销售智能助手。你只�
 ```ts
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import type { TraceEvent } from "@salespilot/shared";
+import type { TraceEvent } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { traces, traceEvents } from "../db/schema.js";
 
@@ -4034,7 +4034,7 @@ export class TraceRecorder {
 
 ```ts
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
-import type { Citation, TraceEvent } from "@salespilot/shared";
+import type { Citation, TraceEvent } from "@salesdeck/shared";
 import type { ChatMessage, ChatProvider } from "./provider.js";
 import { SYSTEM_PROMPT } from "./prompts.js";
 import type { ToolContext, ToolDefinition } from "../tools/types.js";
@@ -4141,7 +4141,7 @@ export function buildAgentGraph(input: {
 ```ts
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
-import { ChatRequest } from "@salespilot/shared";
+import { ChatRequest } from "@salesdeck/shared";
 import type { ChatProvider } from "../agent/provider.js";
 import { buildAgentGraph } from "../agent/graph.js";
 import { TraceRecorder } from "../agent/trace.js";
@@ -4304,7 +4304,7 @@ export function registerHealth(app: FastifyInstance) {
 
 ```ts
 import type { FastifyInstance } from "fastify";
-import { ConfirmRequest } from "@salespilot/shared";
+import { ConfirmRequest } from "@salesdeck/shared";
 import { toolMap, executeTool } from "../tools/index.js";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";
@@ -4334,7 +4334,7 @@ export function registerConfirmations(app: FastifyInstance, deps: { db: Db; sqli
 
 ```ts
 import type { FastifyInstance } from "fastify";
-import { ApprovalDecision } from "@salespilot/shared";
+import { ApprovalDecision } from "@salesdeck/shared";
 import { decideApproval } from "../domain/approvals.js";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";
@@ -4484,7 +4484,7 @@ import { registerDemo } from "./routes/demo.js";
 export function buildApp(deps: { db: Db; sqlite: Database.Database; provider: ChatProvider }) {
   const app = Fastify({ logger: process.env.NODE_ENV !== "test" });
   app.register(cors, { origin: true });
-  app.register(swagger, { openapi: { info: { title: "SalesPilot API", version: "0.1.0" } } });
+  app.register(swagger, { openapi: { info: { title: "SalesDeck API", version: "0.1.0" } } });
   app.register(swaggerUi, { routePrefix: "/docs" });
   registerHealth(app);
   registerOpenAiGateway(app, deps.provider);
@@ -4583,8 +4583,8 @@ export default defineConfig({
   timeout: 60_000,
   use: { baseURL: "http://127.0.0.1:5173", trace: "on-first-retry" },
   webServer: [
-    { command: "pnpm --filter @salespilot/server dev", port: 3000, reuseExistingServer: true, env: { DEMO_MODE: "true", LLM_PROVIDER: "mock" } },
-    { command: "pnpm --filter @salespilot/web dev", port: 5173, reuseExistingServer: true },
+    { command: "pnpm --filter @salesdeck/server dev", port: 3000, reuseExistingServer: true, env: { DEMO_MODE: "true", LLM_PROVIDER: "mock" } },
+    { command: "pnpm --filter @salesdeck/web dev", port: 5173, reuseExistingServer: true },
   ],
 });
 ```
@@ -4596,7 +4596,7 @@ import { expect, test } from "@playwright/test";
 
 test("quote to confirmation", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText("SalesPilot")).toBeVisible();
+  await expect(page.getByText("SalesDeck")).toBeVisible();
   await page.getByPlaceholder("告诉我要做什么…").fill("给华辰设计的张总报 120 台 X1");
   await page.getByRole("button", { name: "发送" }).click();
   await expect(page.getByText("报价单预览")).toBeVisible({ timeout: 30_000 });
@@ -4608,7 +4608,7 @@ test("quote to confirmation", async ({ page }) => {
 - [ ] **Step 2: 跑测试确认失败**
 
 ```bash
-pnpm --filter @salespilot/web test:e2e
+pnpm --filter @salesdeck/web test:e2e
 ```
 
 Expected：FAIL，页面不存在。
@@ -4651,7 +4651,7 @@ export default { plugins: { tailwindcss: {}, autoprefixer: {} } };
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SalesPilot 销售作战室</title>
+    <title>SalesDeck 销售作战室</title>
   </head>
   <body>
     <div id="root"></div>
@@ -4724,7 +4724,7 @@ export async function streamChat(input: { message: string; actorId: string; conv
 
 ```ts
 import { create } from "zustand";
-import type { Artifact, TraceEvent } from "@salespilot/shared";
+import type { Artifact, TraceEvent } from "@salesdeck/shared";
 
 interface AppState {
   actorId: string;
@@ -4819,7 +4819,7 @@ export function Composer({ onSend, disabled }: { onSend: (message: string) => vo
 
 ```tsx
 import { useState } from "react";
-import type { Artifact } from "@salespilot/shared";
+import type { Artifact } from "@salesdeck/shared";
 import { formatMoney } from "../lib/utils";
 
 export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact; onCommitted: (result: any) => void }) {
@@ -4878,7 +4878,7 @@ export function ConfirmationCard({ artifact, onCommitted }: { artifact: Artifact
 `apps/web/src/components/ArtifactCard.tsx`：
 
 ```tsx
-import type { Artifact } from "@salespilot/shared";
+import type { Artifact } from "@salesdeck/shared";
 import { formatMoney } from "../lib/utils";
 import { ConfirmationCard } from "./ConfirmationCard";
 
@@ -4983,7 +4983,7 @@ export function App() {
       <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-6">
         <div className="flex items-center gap-3">
           <div className="h-7 w-7 rounded-lg bg-slate-900" />
-          <div className="text-sm font-semibold">SalesPilot</div>
+          <div className="text-sm font-semibold">SalesDeck</div>
           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700">Mock / DeepSeek</span>
         </div>
         <select className="rounded-lg border border-slate-200 px-2 py-1 text-xs" value={actorId} onChange={(event) => setActor(event.target.value)}>
@@ -5021,7 +5021,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 - [ ] **Step 4: 跑 E2E 确认通过**
 
 ```bash
-pnpm --filter @salespilot/web test:e2e
+pnpm --filter @salesdeck/web test:e2e
 ```
 
 Expected：1 passed。若确认按钮未出现，检查 `artifact.kind` 与 `confirmationToken` 是否通过 SSE 下发。
@@ -5068,7 +5068,7 @@ test("manager approves the pending order", async ({ page }) => {
 - [ ] **Step 2: 跑 E2E 确认失败**
 
 ```bash
-pnpm --filter @salespilot/web test:e2e
+pnpm --filter @salesdeck/web test:e2e
 ```
 
 Expected：FAIL，缺少「转订单」「经理审批」「批准」按钮。
@@ -5232,7 +5232,7 @@ export function App() {
       <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-6">
         <div className="flex items-center gap-3">
           <div className="h-7 w-7 rounded-lg bg-slate-900" />
-          <div className="text-sm font-semibold">SalesPilot</div>
+          <div className="text-sm font-semibold">SalesDeck</div>
           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700">Mock / DeepSeek</span>
         </div>
         <div className="flex items-center gap-2">
@@ -5272,7 +5272,7 @@ const { pendingApprovalId } = useAppStore();
 - [ ] **Step 4: 跑 E2E 确认通过**
 
 ```bash
-pnpm --filter @salespilot/web test:e2e
+pnpm --filter @salesdeck/web test:e2e
 ```
 
 Expected：2 passed。若「转订单」按钮未出现，确认已提交报价的结果里包含 `quote.id`，并且 ChatStream 的 `onCommitted` 保存了它。
@@ -5441,7 +5441,7 @@ echo "smoke ok"
 `README.md` 必须包含：产品简介、5 分钟启动、`.env` 配置、`pnpm dev`、`docker compose up`、测试命令、演示脚本链接、目录结构、XBuddy 记录说明。用下面模板填空为实际内容：
 
 ````md
-# SalesPilot 销售作战室
+# SalesDeck 销售作战室
 
 B2B 销售智能体：自然语言 → 多工具编排 → 风控 → 人工确认/审批 → 真实落库 → 可解释回放。
 

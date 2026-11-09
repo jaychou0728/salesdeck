@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { AppError, type Actor, type ErrorCode } from "@salespilot/shared";
+import { AppError, type Actor, type ErrorCode } from "@salesdeck/shared";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { allTools, executeTool } from "./index.js";

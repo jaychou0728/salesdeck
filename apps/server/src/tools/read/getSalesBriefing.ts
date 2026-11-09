@@ -1,5 +1,5 @@
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
-import { GetSalesBriefingInput, fail, ok } from "@salespilot/shared";
+import { GetSalesBriefingInput, fail, ok } from "@salesdeck/shared";
 import { customers, inventory, products, quotes, users } from "../../db/schema.js";
 import type { ToolDefinition } from "../types.js";
 

@@ -3,6 +3,6 @@ import { WORKSPACE_NAME } from "./index.js";
 
 describe("workspace", () => {
   it("loads shared package", () => {
-    expect(WORKSPACE_NAME).toBe("salespilot");
+    expect(WORKSPACE_NAME).toBe("salesdeck");
   });
 });

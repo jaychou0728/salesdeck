@@ -1,8 +1,8 @@
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
-import type { FollowUpType, OpportunityStage, RiskLevel } from "@salespilot/shared";
+import type { FollowUpType, OpportunityStage, RiskLevel } from "@salesdeck/shared";
 
 // drizzle-kit loads this file through a CJS loader that cannot require the ESM-only
-// @salespilot/shared package, so the values are repeated here. The type annotations
+// @salesdeck/shared package, so the values are repeated here. The type annotations
 // below make TypeScript reject any value that is not part of the shared unions; keep
 // them in sync with OPPORTUNITY_STAGES / RISK_LEVELS / FOLLOW_UP_TYPES in shared.
 const OPPORTUNITY_STAGE_VALUES: [OpportunityStage, ...OpportunityStage[]] = [

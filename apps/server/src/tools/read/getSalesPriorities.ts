@@ -1,4 +1,4 @@
-import { GetSalesPrioritiesInput, fail, ok } from "@salespilot/shared";
+import { GetSalesPrioritiesInput, fail, ok } from "@salesdeck/shared";
 import { buildWorkspace } from "../../domain/workspace.js";
 import type { ToolDefinition } from "../types.js";
 

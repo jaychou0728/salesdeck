@@ -1,4 +1,4 @@
-# SalesPilot 答辩 PPT 提纲（10 页）
+# SalesDeck 答辩 PPT 提纲（10 页）
 
 > 建议时长 8–10 分钟，5 分钟演示视频/现场穿插在第 3 页。
 > 叙事主线：销售的一天如何被 AI 接管 → 为什么它敢做写操作 → 工程证据。
@@ -7,7 +7,7 @@
 
 ## Slide 1｜封面
 
-- 标题：**SalesPilot 销售作战室**
+- 标题：**SalesDeck 销售作战室**
 - 副标题：能替销售跑完一单、每一步都敢给经理看的 AI 销售同事
 - 场景：腾讯 AI Coding 课程作业 · 方向二 · 场景 3
 - 技术栈一行：React · Fastify · LangGraph.js · SQLite/Drizzle · DeepSeek / Mock
@@ -126,7 +126,7 @@
   - Docker 未实机验证
   - 演示身份切换非真实认证
 - 下一步：真实 embedding / 重排、图检查点与多轮记忆、审批通知、Docker CI、真实模型回归评测
-- 收尾一句：**SalesPilot 证明 AI 可以在受控边界内，真正替销售办事。**
+- 收尾一句：**SalesDeck 证明 AI 可以在受控边界内，真正替销售办事。**
 
 **讲述**：用“已知限制 + 下一步”收尾，留出提问空间。
 

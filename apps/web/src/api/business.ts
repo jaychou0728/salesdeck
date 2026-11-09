@@ -10,7 +10,7 @@ import type {
   Role,
   TodoItem,
   TraceEvent,
-} from "@salespilot/shared";
+} from "@salesdeck/shared";
 import { useAppStore } from "../state/store";
 
 export interface ApiErrorBody {

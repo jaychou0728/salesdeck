@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { UpdateOpportunityNextActionInput, fail, ok } from "@salespilot/shared";
+import { UpdateOpportunityNextActionInput, fail, ok } from "@salesdeck/shared";
 import { opportunities } from "../../db/schema.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { withIdempotency } from "../../domain/idempotency.js";

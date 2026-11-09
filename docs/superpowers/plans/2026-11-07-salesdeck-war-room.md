@@ -1,8 +1,8 @@
-# SalesPilot AI 销售作战室 Implementation Plan
+# SalesDeck AI 销售作战室 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 把 SalesPilot 从“销售先提问的聊天式 CRM”升级为“AI 主动判断今天推进谁、为什么、怎么推进，并能执行”的销售作战室。
+**Goal:** 把 SalesDeck 从“销售先提问的聊天式 CRM”升级为“AI 主动判断今天推进谁、为什么、怎么推进，并能执行”的销售作战室。
 
 **Architecture:** 在现有 Fastify + LangGraph + Drizzle + React 上增量扩展。新增 `opportunities` / `follow_ups` 数据层与独立 `domain/workspace` 服务；前端与 AI 工具共用同一套优先级输出；保留现有 9 个工具、SSE、确认令牌、审批与权限。
 
@@ -12,7 +12,7 @@
 
 ## 开始前
 
-- 当前分支：`feature/salespilot`。所有提交都落在这个分支，不新建 worktree。
+- 当前分支：`feature/salesdeck`。所有提交都落在这个分支，不新建 worktree。
 - 基线：`pnpm test` 应为 90 个测试全绿（shared 6 + server 84）。
 - 金额单位统一为“分”；`yuan(x) = x * 100`。
 - 每个 Task 完成后运行该 Task 指定的测试并提交；不要批量攒提交。
@@ -154,7 +154,7 @@ describe("proactive sales contracts", () => {
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/shared exec vitest run src/schemas.test.ts`
+Run: `pnpm --filter @salesdeck/shared exec vitest run src/schemas.test.ts`
 Expected: FAIL，提示 `GetSalesPrioritiesInput` 未导出。
 
 - [ ] **Step 3：实现类型**
@@ -309,7 +309,7 @@ toolName: z.enum([
 
 - [ ] **Step 5：运行测试确认通过**
 
-Run: `pnpm --filter @salespilot/shared exec vitest run src/schemas.test.ts`
+Run: `pnpm --filter @salesdeck/shared exec vitest run src/schemas.test.ts`
 Expected: PASS。
 
 - [ ] **Step 6：提交**
@@ -352,7 +352,7 @@ it("adds opportunity linkage and monthly targets", () => {
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/db/schema.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/db/schema.test.ts`
 Expected: FAIL，提示 `opportunities` 表不存在。
 
 - [ ] **Step 3：实现 Schema**
@@ -433,8 +433,8 @@ export const followUps = sqliteTable(
 Run:
 
 ```bash
-pnpm --filter @salespilot/server db:generate
-pnpm --filter @salespilot/server db:migrate
+pnpm --filter @salesdeck/server db:generate
+pnpm --filter @salesdeck/server db:migrate
 ```
 
 Expected: `apps/server/drizzle/` 下出现 `0001_*.sql`；`migrations applied`。
@@ -443,7 +443,7 @@ Expected: `apps/server/drizzle/` 下出现 `0001_*.sql`；`migrations applied`�
 
 - [ ] **Step 5：运行测试确认通过**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/db/schema.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/db/schema.test.ts`
 Expected: PASS。
 
 - [ ] **Step 6：提交**
@@ -528,7 +528,7 @@ it("seeds team sales for manager ranking", () => {
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/db/seed.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/db/seed.test.ts`
 Expected: FAIL，计数不符。
 
 - [ ] **Step 3：扩展 seed-data.ts**
@@ -721,7 +721,7 @@ const tables = [
 
 - [ ] **Step 6：运行测试确认通过**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/db/seed.test.ts src/db/schema.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/db/seed.test.ts src/db/schema.test.ts`
 Expected: PASS。
 
 - [ ] **Step 7：重置本地演示库**
@@ -729,8 +729,8 @@ Expected: PASS。
 Run:
 
 ```bash
-pnpm --filter @salespilot/server db:migrate
-pnpm --filter @salespilot/server db:seed
+pnpm --filter @salesdeck/server db:migrate
+pnpm --filter @salesdeck/server db:seed
 ```
 
 Expected: `seed done`。
@@ -859,7 +859,7 @@ describe("priority engine", () => {
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/domain/priority.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/domain/priority.test.ts`
 Expected: FAIL，模块不存在。
 
 - [ ] **Step 3：实现 priority.ts**
@@ -867,7 +867,7 @@ Expected: FAIL，模块不存在。
 创建 `apps/server/src/domain/priority.ts`：
 
 ```ts
-import type { OpportunityStage, PriorityItem, PriorityLevel, RiskLevel } from "@salespilot/shared";
+import type { OpportunityStage, PriorityItem, PriorityLevel, RiskLevel } from "@salesdeck/shared";
 
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
@@ -1040,7 +1040,7 @@ function buildSuggestedAction(input: PriorityInput, now: number, overdueDays: nu
 
 - [ ] **Step 4：运行测试确认通过**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/domain/priority.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/domain/priority.test.ts`
 Expected: PASS。
 
 - [ ] **Step 5：提交**
@@ -1064,7 +1064,7 @@ git commit -m "feat: add explainable opportunity priority engine"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import type { Actor } from "@salespilot/shared";
+import type { Actor } from "@salesdeck/shared";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { buildCustomerAssessment, buildOpportunityDetail, buildWorkspace, listOpportunityViews } from "./workspace.js";
@@ -1130,7 +1130,7 @@ describe("workspace service", () => {
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/domain/workspace.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/domain/workspace.test.ts`
 Expected: FAIL，模块不存在。
 
 - [ ] **Step 3：实现 workspace.ts**
@@ -1139,7 +1139,7 @@ Expected: FAIL，模块不存在。
 
 ```ts
 import { and, desc, eq, getTableColumns, gte, inArray, isNull, lt, lte, or } from "drizzle-orm";
-import { AppError, type Actor, type OpportunityStage, type PriorityItem, type RiskLevel, type TodoItem } from "@salespilot/shared";
+import { AppError, type Actor, type OpportunityStage, type PriorityItem, type RiskLevel, type TodoItem } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import {
   afterSalesTickets,
@@ -1750,7 +1750,7 @@ export function listOpportunityViews(
 
 - [ ] **Step 4：运行测试确认通过**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/domain/workspace.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/domain/workspace.test.ts`
 Expected: PASS。若 `buildCustomerAssessment` 的 `suggestion` 不含“备货”，检查华辰商机的库存信号是否命中 SRV 缺口。
 
 - [ ] **Step 5：提交**
@@ -1777,7 +1777,7 @@ git commit -m "feat: add scoped workspace aggregation service"
 ```ts
 import { describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import type { Actor } from "@salespilot/shared";
+import type { Actor } from "@salesdeck/shared";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { followUps, opportunities } from "../db/schema.js";
@@ -1844,7 +1844,7 @@ describe("follow-up domain", () => {
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/domain/followUps.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/domain/followUps.test.ts`
 Expected: FAIL，模块不存在。
 
 - [ ] **Step 3：实现 followUps.ts**
@@ -1854,7 +1854,7 @@ Expected: FAIL，模块不存在。
 ```ts
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { AppError, type Actor, type FollowUpType, type OpportunityStage, type RiskLevel } from "@salespilot/shared";
+import { AppError, type Actor, type FollowUpType, type OpportunityStage, type RiskLevel } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { customers, followUps, opportunities } from "../db/schema.js";
 import { scopedOwnerIds } from "../lib/actor.js";
@@ -1953,7 +1953,7 @@ export function updateOpportunity(db: Db, actor: Actor, opportunityId: string, p
 
 - [ ] **Step 4：运行测试确认通过**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/domain/followUps.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/domain/followUps.test.ts`
 Expected: PASS。
 
 - [ ] **Step 5：提交**
@@ -2092,7 +2092,7 @@ describe("follow-up routes", () => {
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/routes/workspace.test.ts src/routes/followUps.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/routes/workspace.test.ts src/routes/followUps.test.ts`
 Expected: FAIL，路由 404。
 
 - [ ] **Step 3：实现 workspace 路由**
@@ -2102,7 +2102,7 @@ Expected: FAIL，路由 404。
 ```ts
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { AppError, opportunityStage, riskLevel, type OpportunityStage, type RiskLevel } from "@salespilot/shared";
+import { AppError, opportunityStage, riskLevel, type OpportunityStage, type RiskLevel } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";
 import { resolveActor } from "../lib/actor.js";
@@ -2230,7 +2230,7 @@ export function registerWorkspace(app: FastifyInstance, deps: { db: Db; sqlite: 
 ```ts
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { AppError, followUpType } from "@salespilot/shared";
+import { AppError, followUpType } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";
 import { resolveActor } from "../lib/actor.js";
@@ -2299,7 +2299,7 @@ registerFollowUps(app, deps);
 
 - [ ] **Step 6：运行测试确认通过**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/routes/workspace.test.ts src/routes/followUps.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/routes/workspace.test.ts src/routes/followUps.test.ts`
 Expected: PASS。
 
 - [ ] **Step 7：提交**
@@ -2389,7 +2389,7 @@ import { approvals, customers, opportunities, orders, priceRules, quotes } from 
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/routes/business.test.ts src/tools/write-tools.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/routes/business.test.ts src/tools/write-tools.test.ts`
 Expected: FAIL，客户详情没有 `opportunities`，报价没有写入 `opportunityId`。
 
 - [ ] **Step 3：扩展客户详情**
@@ -2503,7 +2503,7 @@ if (quote.opportunityId) {
 
 - [ ] **Step 6：运行测试确认通过**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/routes/business.test.ts src/tools/write-tools.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/routes/business.test.ts src/tools/write-tools.test.ts`
 Expected: PASS。
 
 注意：现有 `business.test.ts` 中 `metrics.customers` 对销售的断言需要从 8 改为 9（因为新增了 `c_hengtai` 归小林）。同时 `seed.test.ts` 已在 Task 3 更新。
@@ -2534,7 +2534,7 @@ git commit -m "feat: link quotes and orders to opportunities"
 
 ```ts
 import { describe, expect, it } from "vitest";
-import type { Actor } from "@salespilot/shared";
+import type { Actor } from "@salesdeck/shared";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { allTools, executeTool } from "./index.js";
@@ -2591,7 +2591,7 @@ describe("proactive read tools", () => {
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/tools/proactive-tools.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/tools/proactive-tools.test.ts`
 Expected: FAIL，工具不存在。
 
 - [ ] **Step 3：实现 getSalesPriorities**
@@ -2599,7 +2599,7 @@ Expected: FAIL，工具不存在。
 创建 `apps/server/src/tools/read/getSalesPriorities.ts`：
 
 ```ts
-import { GetSalesPrioritiesInput, fail, ok } from "@salespilot/shared";
+import { GetSalesPrioritiesInput, fail, ok } from "@salesdeck/shared";
 import { buildWorkspace } from "../../domain/workspace.js";
 import type { ToolDefinition } from "../types.js";
 
@@ -2639,7 +2639,7 @@ export const getSalesPriorities: ToolDefinition<GetSalesPrioritiesInput, unknown
 创建 `apps/server/src/tools/read/getOpportunityDetail.ts`：
 
 ```ts
-import { AppError, GetOpportunityDetailInput, fail, ok } from "@salespilot/shared";
+import { AppError, GetOpportunityDetailInput, fail, ok } from "@salesdeck/shared";
 import { buildOpportunityDetail } from "../../domain/workspace.js";
 import type { ToolDefinition } from "../types.js";
 
@@ -2670,7 +2670,7 @@ export const getOpportunityDetail: ToolDefinition<GetOpportunityDetailInput, unk
 
 ```ts
 import { desc, eq } from "drizzle-orm";
-import { GetCustomer360Input, fail, ok } from "@salespilot/shared";
+import { GetCustomer360Input, fail, ok } from "@salesdeck/shared";
 import { contacts, customers, followUps, opportunities, orders, quotes } from "../../db/schema.js";
 import { scopedOwnerIds } from "../../lib/actor.js";
 import type { ToolDefinition } from "../types.js";
@@ -2739,7 +2739,7 @@ export const readTools = [
 
 - [ ] **Step 7：运行测试确认通过**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/tools/proactive-tools.test.ts src/tools/read-tools.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/tools/proactive-tools.test.ts src/tools/read-tools.test.ts`
 Expected: PASS。
 
 - [ ] **Step 8：提交**
@@ -2836,7 +2836,7 @@ it("blocks cross-owner writes", async () => {
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/tools/proactive-tools.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/tools/proactive-tools.test.ts`
 Expected: FAIL，工具不存在。
 
 - [ ] **Step 3：实现 logFollowUp**
@@ -2846,7 +2846,7 @@ Expected: FAIL，工具不存在。
 ```ts
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { LogFollowUpInput, fail, ok } from "@salespilot/shared";
+import { LogFollowUpInput, fail, ok } from "@salesdeck/shared";
 import { customers, followUps, opportunities } from "../../db/schema.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { withIdempotency } from "../../domain/idempotency.js";
@@ -2962,7 +2962,7 @@ export const logFollowUp: ToolDefinition<LogFollowUpInput, unknown> = {
 
 ```ts
 import { eq } from "drizzle-orm";
-import { UpdateOpportunityNextActionInput, fail, ok } from "@salespilot/shared";
+import { UpdateOpportunityNextActionInput, fail, ok } from "@salesdeck/shared";
 import { opportunities } from "../../db/schema.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { withIdempotency } from "../../domain/idempotency.js";
@@ -3056,7 +3056,7 @@ export const writeTools = [
 
 - [ ] **Step 6：运行测试确认通过**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/tools/proactive-tools.test.ts src/tools/write-tools.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/tools/proactive-tools.test.ts src/tools/write-tools.test.ts`
 Expected: PASS。
 
 - [ ] **Step 7：提交**
@@ -3109,7 +3109,7 @@ it("promotes a customer through proactive tools", async () => {
 
 - [ ] **Step 2：运行测试确认失败**
 
-Run: `pnpm --filter @salespilot/server exec vitest run src/agent/graph.test.ts`
+Run: `pnpm --filter @salesdeck/server exec vitest run src/agent/graph.test.ts`
 Expected: FAIL，Mock 没有主动推进脚本。
 
 - [ ] **Step 3：更新系统提示**
@@ -3216,7 +3216,7 @@ const useManager = testCase.input.includes("团队") || testCase.input.includes(
 Run:
 
 ```bash
-pnpm --filter @salespilot/server exec vitest run src/agent/graph.test.ts
+pnpm --filter @salesdeck/server exec vitest run src/agent/graph.test.ts
 pnpm eval
 ```
 
@@ -3328,7 +3328,7 @@ import type {
   PriorityItem,
   RiskLevel,
   TodoItem,
-} from "@salespilot/shared";
+} from "@salesdeck/shared";
 
 export interface OpportunityRow {
   id: string;
@@ -3509,7 +3509,7 @@ export function recordFollowUp(input: {
 
 - [ ] **Step 3：类型检查**
 
-Run: `pnpm --filter @salespilot/web typecheck`
+Run: `pnpm --filter @salesdeck/web typecheck`
 Expected: PASS（页面尚未使用新类型）。
 
 - [ ] **Step 4：提交**
@@ -3535,7 +3535,7 @@ git commit -m "feat: add workspace client types"
 创建 `apps/web/src/lib/opportunity.ts`：
 
 ```ts
-import type { PriorityItem, RiskLevel } from "@salespilot/shared";
+import type { PriorityItem, RiskLevel } from "@salesdeck/shared";
 import type { BadgeTone } from "../components/ui/Badge";
 
 export const STAGE_LABELS: Record<string, string> = {
@@ -3575,7 +3575,7 @@ export function priorityLabel(priority: PriorityItem["priority"]) {
 创建 `apps/web/src/components/PriorityCard.tsx`：
 
 ```tsx
-import type { PriorityItem } from "@salespilot/shared";
+import type { PriorityItem } from "@salesdeck/shared";
 import { Link } from "react-router-dom";
 import { ArrowRight, Bot, ClipboardList, User } from "lucide-react";
 import { formatMoney } from "../lib/utils";
@@ -3668,7 +3668,7 @@ export function PriorityCard({
 
 ```tsx
 import { Link } from "react-router-dom";
-import type { TodoItem } from "@salespilot/shared";
+import type { TodoItem } from "@salesdeck/shared";
 import { Card, CardBody, CardHeader } from "./ui/Card";
 import { Badge } from "./ui/Badge";
 
@@ -3956,7 +3956,7 @@ export function FollowUpModal({
 
 - [ ] **Step 6：类型检查**
 
-Run: `pnpm --filter @salespilot/web typecheck`
+Run: `pnpm --filter @salesdeck/web typecheck`
 Expected: PASS。
 
 - [ ] **Step 7：提交**
@@ -3981,7 +3981,7 @@ git commit -m "feat: add war room UI components"
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bot, FileText, Target, TrendingDown, TrendingUp, Users, Wallet } from "lucide-react";
-import type { PriorityItem } from "@salespilot/shared";
+import type { PriorityItem } from "@salesdeck/shared";
 import { useAppStore, useRole } from "../state/store";
 import { useApi, type WorkspaceResponse } from "../api/business";
 import { formatMoney } from "../lib/utils";
@@ -4200,7 +4200,7 @@ export function Dashboard() {
 
 - [ ] **Step 2：类型检查**
 
-Run: `pnpm --filter @salespilot/web typecheck`
+Run: `pnpm --filter @salesdeck/web typecheck`
 Expected: PASS。若 `WorkspaceResponse` 的 `recentQuotes` 类型与 `QuoteRow` 不兼容，把 `recentQuotes` 的类型改为 `QuoteRow[]` 并在 API 中保持字段一致。
 
 - [ ] **Step 3：启动页面人工检查**
@@ -4325,7 +4325,7 @@ export function Opportunities() {
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Bot, ClipboardList, FileText, Phone } from "lucide-react";
-import type { PriorityItem } from "@salespilot/shared";
+import type { PriorityItem } from "@salesdeck/shared";
 import { errorMessage, useApi, type OpportunityDetailResponse } from "../api/business";
 import { updateOpportunity } from "../api/workspace";
 import { useAppStore } from "../state/store";
@@ -4625,7 +4625,7 @@ const result = await apiPost<QuotePreviewResponse>("/api/business/quotes/preview
 
 - [ ] **Step 5：类型检查**
 
-Run: `pnpm --filter @salespilot/web typecheck`
+Run: `pnpm --filter @salesdeck/web typecheck`
 Expected: PASS。
 
 - [ ] **Step 6：提交**
@@ -4651,7 +4651,7 @@ git commit -m "feat: add opportunity list and detail pages"
 ```tsx
 import { useState } from "react";
 import { Bot, ClipboardList } from "lucide-react";
-import type { PriorityItem } from "@salespilot/shared";
+import type { PriorityItem } from "@salesdeck/shared";
 import { AIAssessmentCard } from "../components/AIAssessmentCard";
 import { FollowUpModal } from "../components/FollowUpModal";
 import { RISK_LABELS, STAGE_LABELS, stageTone, riskTone } from "../lib/opportunity";
@@ -4804,7 +4804,7 @@ actions={
 
 - [ ] **Step 2：类型检查**
 
-Run: `pnpm --filter @salespilot/web typecheck`
+Run: `pnpm --filter @salesdeck/web typecheck`
 Expected: PASS。
 
 - [ ] **Step 3：提交**
@@ -4838,7 +4838,7 @@ git commit -m "feat: turn customer detail into a progression center"
 把 `ArtifactCard.tsx` 改为：
 
 ```tsx
-import type { Artifact } from "@salespilot/shared";
+import type { Artifact } from "@salesdeck/shared";
 import { formatMoney } from "../lib/utils";
 import { ConfirmationCard } from "./ConfirmationCard";
 
@@ -4958,7 +4958,7 @@ function onCommitted(result: any) {
 
 - [ ] **Step 6：类型检查**
 
-Run: `pnpm --filter @salespilot/web typecheck`
+Run: `pnpm --filter @salesdeck/web typecheck`
 Expected: PASS。
 
 - [ ] **Step 7：提交**

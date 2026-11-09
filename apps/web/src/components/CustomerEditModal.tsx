@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Role } from "@salespilot/shared";
+import type { Role } from "@salesdeck/shared";
 import { apiPatch, errorMessage, useApi, type CustomerRow, type TeamMembersResponse } from "../api/business";
 import { useAppStore } from "../state/store";
 import { Button } from "./ui/Button";

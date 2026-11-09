@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Actor } from "@salespilot/shared";
+import type { Actor } from "@salesdeck/shared";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { approvals } from "../db/schema.js";

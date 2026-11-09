@@ -1,6 +1,6 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { confirmationTokens } from "../db/schema.js";
 import { sha256, stableStringify } from "./idempotency.js";

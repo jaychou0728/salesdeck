@@ -1,4 +1,4 @@
-import { ok, SearchKnowledgeInput } from "@salespilot/shared";
+import { ok, SearchKnowledgeInput } from "@salesdeck/shared";
 import { retrieve } from "../../rag/retrieve.js";
 import type { ToolDefinition } from "../types.js";
 

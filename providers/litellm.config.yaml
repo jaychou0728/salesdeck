@@ -1,0 +1,48 @@
+# LiteLLM proxy: one OpenAI-compatible endpoint for many vendors.
+# Start with:
+#   litellm --config providers/litellm.config.yaml --port 4000
+# Then set in .env:
+#   LLM_PROVIDER=litellm
+#   LLM_MODEL=deepseek-chat   # any model_name below
+#   LITELLM_MASTER_KEY=sk-salesdeck
+model_list:
+  - model_name: deepseek-chat
+    litellm_params:
+      model: deepseek/deepseek-chat
+      api_key: os.environ/DEEPSEEK_API_KEY
+
+  - model_name: deepseek-reasoner
+    litellm_params:
+      model: deepseek/deepseek-reasoner
+      api_key: os.environ/DEEPSEEK_API_KEY
+
+  - model_name: qwen-plus
+    litellm_params:
+      model: dashscope/qwen-plus
+      api_key: os.environ/DASHSCOPE_API_KEY
+
+  - model_name: kimi-8k
+    litellm_params:
+      model: moonshot/moonshot-v1-8k
+      api_key: os.environ/MOONSHOT_API_KEY
+
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: openrouter-auto
+    litellm_params:
+      model: openrouter/openrouter/auto
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: glm-4-flash
+    litellm_params:
+      model: zhipu/glm-4-flash
+      api_key: os.environ/ZHIPU_API_KEY
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+litellm_settings:
+  drop_params: true

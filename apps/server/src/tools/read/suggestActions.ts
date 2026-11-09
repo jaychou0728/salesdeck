@@ -1,4 +1,4 @@
-import { SuggestActionsInput, ok } from "@salespilot/shared";
+import { SuggestActionsInput, ok } from "@salesdeck/shared";
 import type { ToolDefinition } from "../types.js";
 
 export const suggestActions: ToolDefinition<SuggestActionsInput, unknown> = {

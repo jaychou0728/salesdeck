@@ -27,7 +27,7 @@ export interface ChatResponse {
 
 export interface ChatProvider {
   name: string;
-  chat(request: { messages: ChatMessage[]; tools?: unknown[]; stream?: boolean }): Promise<ChatResponse | AsyncIterable<unknown>>;
+  chat(request: { messages: ChatMessage[]; tools?: unknown[]; stream?: boolean; model?: string }): Promise<ChatResponse | AsyncIterable<unknown>>;
 }
 
 export function textResponse(content: string, model = "mock"): ChatResponse {

@@ -1,5 +1,5 @@
 import { desc, eq } from "drizzle-orm";
-import { GetCustomer360Input, fail, ok } from "@salespilot/shared";
+import { GetCustomer360Input, fail, ok } from "@salesdeck/shared";
 import { contacts, customers, followUps, opportunities, orders, quotes } from "../../db/schema.js";
 import { scopedOwnerIds } from "../../lib/actor.js";
 import type { ToolDefinition } from "../types.js";

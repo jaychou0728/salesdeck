@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { Actor, Artifact, Role, ToolResult, TraceEvent } from "@salespilot/shared";
+import type { Actor, Artifact, Role, ToolResult, TraceEvent } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";
 

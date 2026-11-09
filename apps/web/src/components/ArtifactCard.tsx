@@ -1,4 +1,4 @@
-import type { ActionSuggestion, Artifact } from "@salespilot/shared";
+import type { ActionSuggestion, Artifact } from "@salesdeck/shared";
 import { formatMoney } from "../lib/utils";
 import { ConfirmationCard } from "./ConfirmationCard";
 

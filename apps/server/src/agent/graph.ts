@@ -1,5 +1,5 @@
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
-import type { Citation, TraceEvent } from "@salespilot/shared";
+import type { Citation, TraceEvent } from "@salesdeck/shared";
 import type { ChatMessage, ChatProvider } from "./provider.js";
 import { SYSTEM_PROMPT } from "./prompts.js";
 import { sanitizeAssistantText } from "./sanitize.js";

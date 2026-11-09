@@ -27,7 +27,7 @@ import { registerDemo } from "./routes/demo.js";
 export function buildApp(deps: { db: Db; sqlite: Database.Database; provider: ChatProvider }) {
   const app = Fastify({ logger: process.env.NODE_ENV !== "test" });
   app.register(cors, { origin: true });
-  app.register(swagger, { openapi: { info: { title: "SalesPilot API", version: "0.1.0" } } });
+  app.register(swagger, { openapi: { info: { title: "SalesDeck API", version: "0.1.0" } } });
   app.register(swaggerUi, { routePrefix: "/docs" });
   registerHealth(app, deps.provider.name);
   registerOpenAiGateway(app, deps.provider);

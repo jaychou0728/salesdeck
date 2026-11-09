@@ -5,7 +5,7 @@ import { createDb } from "./db/client.js";
 import { seedDatabase } from "./db/seed.js";
 import { users } from "./db/schema.js";
 import { ingestKnowledge } from "./rag/ingest.js";
-import { getProvider } from "./agent/deepseekProvider.js";
+import { getProvider } from "./agent/openaiProvider.js";
 import { buildApp } from "./app.js";
 
 // `pnpm dev` runs the server from apps/server; load the repo-root .env explicitly.
@@ -17,6 +17,6 @@ migrate(db, { migrationsFolder: path.resolve(import.meta.dirname, "../drizzle") 
 if (db.select().from(users).all().length === 0) seedDatabase(db);
 ingestKnowledge(db, path.resolve(import.meta.dirname, "../../../knowledge"));
 const provider = getProvider();
-console.log(`[SalesPilot] LLM provider: ${provider.name}`);
+console.log(`[SalesDeck] LLM provider: ${provider.name}`);
 const app = buildApp({ db, sqlite, provider });
 await app.listen({ port: Number(process.env.PORT ?? 3000), host: "0.0.0.0" });

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { TraceEvent } from "@salespilot/shared";
+import type { TraceEvent } from "@salesdeck/shared";
 import { Activity, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAppStore } from "../state/store";

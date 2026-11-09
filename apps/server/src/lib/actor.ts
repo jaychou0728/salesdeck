@@ -1,4 +1,4 @@
-import { AppError, type Actor } from "@salespilot/shared";
+import { AppError, type Actor } from "@salesdeck/shared";
 import { eq, inArray, type SQL } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { customers, users } from "../db/schema.js";

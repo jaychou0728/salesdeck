@@ -1,5 +1,5 @@
 import { and, eq, inArray, like, or } from "drizzle-orm";
-import { SearchCustomersInput, ok } from "@salespilot/shared";
+import { SearchCustomersInput, ok } from "@salesdeck/shared";
 import { contacts, customers } from "../../db/schema.js";
 import { scopedOwnerIds } from "../../lib/actor.js";
 import type { ToolDefinition } from "../types.js";

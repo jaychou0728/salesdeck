@@ -1,4 +1,4 @@
-import type { PriorityItem, RiskLevel } from "@salespilot/shared";
+import type { PriorityItem, RiskLevel } from "@salesdeck/shared";
 import type { BadgeTone } from "../components/ui/Badge";
 
 export const STAGE_LABELS: Record<string, string> = {

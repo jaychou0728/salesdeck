@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { ApprovalDecision } from "@salespilot/shared";
+import { ApprovalDecision } from "@salesdeck/shared";
 import { decideApproval } from "../domain/approvals.js";
 import type { Db } from "../db/client.js";
 import type Database from "better-sqlite3";

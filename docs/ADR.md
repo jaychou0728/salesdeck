@@ -44,7 +44,7 @@
 
 **背景**：现场网络/API Key 不可控；协议测试与 Agent 评测需要稳定、可重复的输出。
 
-**决策**：定义 `ChatProvider` 接口，提供 `DeepSeekProvider`（OpenAI 兼容）与 `MockProvider`。`LLM_PROVIDER=mock` 或缺少 Key 时自动使用 Mock；Mock 按关键词返回固定的工具调用脚本。
+**决策**：定义 `ChatProvider` 接口，提供 `OpenAiCompatibleProvider`（供应商预设 + 通用 `LLM_BASE_URL/API_KEY/MODEL`）与 `MockProvider`。配置缺失时降级 Mock 并在启动日志说明原因；Mock 按关键词返回固定的工具调用脚本。
 
 **取舍**：
 - 优点：离线可完整演示；评测不依赖外部模型，结果可复现；同一套运行时同时服务真实模型与 Mock。
@@ -97,3 +97,27 @@
 **取舍**：
 - 优点：零外部依赖、离线可跑；证据门槛显著降低越界回答；引用可追溯到 chunk。
 - 代价：哈希向量语义能力弱于神经 embedding，同义改写召回有限；词法门槛可能漏掉合理但措辞差异大的问题，需靠别名表与文档措辞缓解。
+
+---
+
+## ADR-009：多厂商模型接入，LiteLLM 作为可选统一代理
+
+**背景**：课程演示与不同同学的环境需要不同模型供应商，不能把运行时绑定在单一厂商；同时不希望为每家厂商引入一套 SDK。
+
+**决策**：服务端只依赖 OpenAI 兼容协议。内置 DeepSeek / OpenAI / 通义千问 / Kimi / 智谱 / SiliconFlow / OpenRouter / Groq / Ollama / LiteLLM 预设，并提供通用 `LLM_BASE_URL`、`LLM_API_KEY`、`LLM_MODEL` 覆盖。需要「一套配置接 100+ 厂商」时，运行 Python 的 LiteLLM 代理（`providers/litellm.config.yaml`），SalesDeck 以 `LLM_PROVIDER=litellm` 指向它。`POST /v1/chat/completions` 的 `model` 字段可透传。
+
+**取舍**：
+- 优点：不绑定厂商；无需引入多套 SDK；LiteLLM 可集中管理 Key、路由与降级；本地 Ollama 可完全离线。
+- 代价：不同厂商对 `tools`、流式、参数的支持存在差异；LiteLLM 多一个 Python 进程与配置面；Mock 评测不能代表真实模型能力。
+
+---
+
+## ADR-010：Cloudflare Tunnel 作为公网演示通道
+
+**背景**：需要在校园机房直接访问本机演示，且没有公网 IP / 端口映射。
+
+**决策**：生产构建由 Fastify 单端口托管，`pnpm demo:tunnel` 启动服务并拉起 `cloudflared` 快速隧道，输出临时 `*.trycloudflare.com` 地址。快速隧道无需账号，适合短期演示；固定域名使用 Cloudflare 命名隧道。公网仅暴露种子数据，`DEMO_MODE=true` 以支持重置。
+
+**取舍**：
+- 优点：零路由器配置；HTTPS 自动提供；一条命令可用。
+- 代价：快速隧道地址每次启动变化，依赖本机持续开机；公网 URL 需自行保密；不具备生产级认证。

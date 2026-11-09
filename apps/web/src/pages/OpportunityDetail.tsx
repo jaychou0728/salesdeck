@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Bot, ClipboardList, FileText, Pencil, Phone } from "lucide-react";
-import type { PriorityItem } from "@salespilot/shared";
+import type { PriorityItem } from "@salesdeck/shared";
 import { errorMessage, useApi, type OpportunityDetailResponse } from "../api/business";
 import { updateOpportunity } from "../api/workspace";
 import { useAppStore } from "../state/store";

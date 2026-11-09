@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bot, FileText, Target, TrendingDown, TrendingUp, Users, Wallet } from "lucide-react";
-import type { PriorityItem } from "@salespilot/shared";
+import type { PriorityItem } from "@salesdeck/shared";
 import { useAppStore, useRole } from "../state/store";
 import { useApi, type WorkspaceResponse } from "../api/business";
 import { formatMoney } from "../lib/utils";

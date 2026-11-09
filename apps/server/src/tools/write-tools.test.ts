@@ -5,7 +5,7 @@ import { seedDatabase } from "../db/seed.js";
 import { allTools, executeTool } from "./index.js";
 import { approvals, customers, opportunities, orders, priceRules, quoteLines, quotes } from "../db/schema.js";
 import { decideApproval } from "../domain/approvals.js";
-import type { Actor } from "@salespilot/shared";
+import type { Actor } from "@salesdeck/shared";
 
 const sales: Actor = { id: "u_sales_lin", name: "小林", role: "sales", teamId: "team_east" };
 const manager: Actor = { id: "u_manager_wang", name: "老王", role: "manager", teamId: "team_east" };

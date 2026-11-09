@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { makeTestDb } from "../test/helpers.js";
 import { seedDatabase } from "../db/seed.js";
 import { executeTool, readTools } from "./index.js";
-import type { Actor, TraceEvent } from "@salespilot/shared";
+import type { Actor, TraceEvent } from "@salesdeck/shared";
 
 const sales: Actor = { id: "u_sales_lin", name: "小林", role: "sales", teamId: "team_east" };
 

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import type { TraceEvent } from "@salespilot/shared";
+import type { TraceEvent } from "@salesdeck/shared";
 import type { Db } from "../db/client.js";
 import { traces, traceEvents } from "../db/schema.js";
 

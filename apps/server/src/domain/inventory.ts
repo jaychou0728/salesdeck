@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import { AppError } from "@salespilot/shared";
+import { AppError } from "@salesdeck/shared";
 
 export interface InventoryView {
   warehouseId: string;

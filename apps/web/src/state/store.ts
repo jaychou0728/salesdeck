@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Artifact, Role, TraceEvent } from "@salespilot/shared";
+import type { Artifact, Role, TraceEvent } from "@salesdeck/shared";
 import type { TraceEventLike } from "../api/business";
 
 export type ToastKind = "success" | "error" | "info";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { ok, type Actor, type TraceEvent } from "@salespilot/shared";
+import { ok, type Actor, type TraceEvent } from "@salesdeck/shared";
 import { auditLogs } from "../db/schema.js";
 import { seedDatabase } from "../db/seed.js";
 import { makeTestDb } from "../test/helpers.js";

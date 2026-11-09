@@ -26,7 +26,7 @@ function pickCustomerName(user: string) {
 export class MockProvider implements ChatProvider {
   name = "mock";
 
-  async chat(request: { messages: ChatMessage[]; tools?: unknown[]; stream?: boolean }): Promise<ChatResponse | AsyncIterable<unknown>> {
+  async chat(request: { messages: ChatMessage[]; tools?: unknown[]; stream?: boolean; model?: string }): Promise<ChatResponse | AsyncIterable<unknown>> {
     const response = this.route(request.messages);
     return request.stream ? streamResponse(response) : response;
   }
