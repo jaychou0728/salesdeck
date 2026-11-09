@@ -3,7 +3,7 @@
 > 项目：SalesDeck 销售作战室
 > 时间：2026-11-03 → 2026-11-09
 > 工具：Claude Code（终端内 AI Coding Agent，会话模型标识 `deepseek-flash[1m]`）
-> 仓库：本地 Git（`feature/salespilot` 分支），最终提交到 GitHub
+> 仓库：本地 Git（`feature/salesdeck` 分支，`main` 为发布分支），最终提交到 GitHub
 
 这份记录说明 AI 在本项目中**做了什么、怎么被约束、产出如何被验证**，不是「AI 一键生成」的展示稿。
 
