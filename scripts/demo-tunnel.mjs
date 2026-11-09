@@ -97,6 +97,18 @@ async function main() {
     log(`复用已运行的服务 http://127.0.0.1:${port}`);
   }
 
+  try {
+    const health = await (await fetch(`http://127.0.0.1:${port}/health`)).json();
+    log(
+      `AI Provider: ${health.provider}` +
+        (health.provider === "mock"
+          ? "（公网演示默认 Mock；接真实模型请运行 LLM_PROVIDER=deepseek pnpm demo:tunnel）"
+          : ""),
+    );
+  } catch {
+    // health is best-effort here
+  }
+
   if (!withTunnel) {
     log("已跳过 Cloudflare Tunnel（--no-tunnel）");
     return;

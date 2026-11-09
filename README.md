@@ -58,7 +58,7 @@ curl -s http://localhost:3000/health
 # {"ok":true,"provider":"deepseek"}
 ```
 
-如果显示 `mock`，服务端启动日志会给出配置错误原因（缺 Key、缺模型名或 Base URL）。
+页面右上角的 `AI: xxx` 徽标也显示当前实际 Provider。如果显示 `AI: Mock`，服务端启动日志会给出配置错误原因（缺 Key、缺模型名或 Base URL），或说明你正在使用公网演示的默认 Mock 模式。
 
 ## 公网演示（Cloudflare Tunnel）
 

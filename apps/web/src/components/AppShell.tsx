@@ -48,6 +48,7 @@ export function AppShell() {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const { data: me } = useApi<MeResponse>("/api/business/me");
+  const { data: health } = useApi<{ ok: boolean; provider: string }>("/health");
   useEffect(() => {
     if (me) setRole(me.actor.role);
   }, [me, setRole]);
@@ -110,6 +111,22 @@ export function AppShell() {
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          <span
+            data-testid="provider-badge"
+            title={
+              health?.provider === "mock"
+                ? "当前使用确定性 Mock；在 .env 设置 LLM_PROVIDER 与 Key 后重启即可接入真实模型"
+                : `当前模型供应商：${health?.provider ?? "加载中"}`
+            }
+            className={cn(
+              "hidden items-center rounded-full px-2 py-1 text-[10px] font-medium ring-1 ring-inset sm:inline-flex",
+              health?.provider && health.provider !== "mock"
+                ? "bg-teal-50 text-teal-700 ring-teal-200"
+                : "bg-amber-50 text-amber-700 ring-amber-200",
+            )}
+          >
+            {health ? (health.provider === "mock" ? "AI: Mock" : `AI: ${health.provider}`) : "AI: …"}
+          </span>
           <label htmlFor="role-switch" className="sr-only">
             切换角色
           </label>
