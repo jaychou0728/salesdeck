@@ -112,7 +112,7 @@ winget install --id Cloudflare.cloudflared -e
 
 ```bash
 pnpm typecheck   # shared + server + web
-pnpm test        # Vitest：shared 14 + 服务端 146
+pnpm test        # Vitest：shared 14 + 服务端 149
 pnpm test:e2e    # Playwright：19 条端到端
 pnpm eval        # 30 条 Agent golden cases，生成 docs/EVAL_REPORT.md
 pnpm build       # shared / server / web

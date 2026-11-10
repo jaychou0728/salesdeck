@@ -118,51 +118,59 @@ async function main() {
     return;
   }
 
-  log("启动 Cloudflare 快速隧道…");
-  const tunnel = spawn("cloudflared", ["tunnel", "--url", `http://127.0.0.1:${port}`, "--no-autoupdate"], {
-    cwd: root,
-    env: process.env,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  children.push(tunnel);
+  function launchTunnel(attempt = 1) {
+    log(attempt === 1 ? "启动 Cloudflare 快速隧道…" : `重试 Cloudflare 快速隧道（第 ${attempt}/3 次）…`);
+    const tunnel = spawn("cloudflared", ["tunnel", "--url", `http://127.0.0.1:${port}`, "--no-autoupdate"], {
+      cwd: root,
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    children.push(tunnel);
 
-  let url = null;
-  const handle = (buffer) => {
-    const text = buffer.toString();
-    for (const line of text.split(/\r?\n/)) {
-      if (!line.trim()) continue;
-      if (!url) process.stdout.write(`  ${line}\n`);
-      const match = line.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
-      if (match && !url) {
-        url = match[0];
-        fs.mkdirSync(path.join(root, "data"), { recursive: true });
-        fs.writeFileSync(path.join(root, "data/tunnel-url.txt"), `${url}\n`);
-        console.log("\n========================================================");
-        console.log(`  SalesDeck 公网地址： ${url}`);
-        if (startedServer && basicAuth) {
-          const [user] = basicAuth.split(":");
-          console.log(`  访问账号： ${user} / ${basicAuth.split(":").slice(1).join(":")}`);
-        } else {
-          console.log("  访问密码： 复用已有服务（由该服务决定）");
+    let url = null;
+    const handle = (buffer) => {
+      const text = buffer.toString();
+      for (const line of text.split(/\r?\n/)) {
+        if (!line.trim()) continue;
+        if (!url) process.stdout.write(`  ${line}\n`);
+        const match = line.match(/https:\/\/(?!(?:api|www)\.)[a-z0-9-]+\.trycloudflare\.com/);
+        if (match && !url) {
+          url = match[0];
+          fs.mkdirSync(path.join(root, "data"), { recursive: true });
+          fs.writeFileSync(path.join(root, "data/tunnel-url.txt"), `${url}\n`);
+          console.log("\n========================================================");
+          console.log(`  SalesDeck 公网地址： ${url}`);
+          if (startedServer && basicAuth) {
+            const [user] = basicAuth.split(":");
+            console.log(`  访问账号： ${user} / ${basicAuth.split(":").slice(1).join(":")}`);
+          } else {
+            console.log("  访问密码： 复用已有服务（由该服务决定）");
+          }
+          console.log(`  已写入 data/tunnel-url.txt`);
+          console.log("  按 Ctrl+C 停止服务与隧道");
+          console.log("========================================================\n");
         }
-        console.log(`  已写入 data/tunnel-url.txt`);
-        console.log("  按 Ctrl+C 停止服务与隧道");
-        console.log("========================================================\n");
       }
-    }
-  };
-  tunnel.stdout.on("data", handle);
-  tunnel.stderr.on("data", handle);
-  tunnel.on("error", (error) => {
-    log(`无法启动 cloudflared：${error.message}`);
-    log("安装方式：winget install --id Cloudflare.cloudflared -e");
-  });
-  tunnel.on("exit", (code) => {
-    if (!url) {
-      log(`cloudflared 退出：${code}`);
+    };
+    tunnel.stdout.on("data", handle);
+    tunnel.stderr.on("data", handle);
+    tunnel.on("error", (error) => {
+      log(`无法启动 cloudflared：${error.message}`);
+      log("安装方式：winget install --id Cloudflare.cloudflared -e");
+    });
+    tunnel.on("exit", (code) => {
+      if (url) return;
+      if (attempt < 3) {
+        log(`cloudflared 未建立隧道（退出码 ${code}），3 秒后重试`);
+        setTimeout(() => launchTunnel(attempt + 1), 3000);
+        return;
+      }
+      log(`cloudflared 连续 3 次未建立隧道（退出码 ${code}）。请检查网络或稍后重试。`);
       stop(code ?? 1);
-    }
-  });
+    });
+  }
+
+  launchTunnel();
 }
 
 main().catch((error) => {

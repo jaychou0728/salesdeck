@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { ConvertQuoteToOrderInput, fail, ok } from "@salesdeck/shared";
-import { customers, inventory, quoteLines, quotes, warehouses } from "../../db/schema.js";
+import { customers, inventory, products, quoteLines, quotes, warehouses } from "../../db/schema.js";
 import { createApproval } from "../../domain/approvals.js";
 import { consumeConfirmationToken, issueConfirmationToken } from "../../domain/confirmation.js";
 import { checkCredit } from "../../domain/credit.js";
@@ -27,6 +27,36 @@ export const convertQuoteToOrder: ToolDefinition<ConvertQuoteToOrderInput, unkno
   execute(ctx, input) {
     const quote = ctx.db.select().from(quotes).where(eq(quotes.id, input.quoteId)).get();
     if (!quote) return { model: fail("NOT_FOUND", "报价不存在") };
+    if (quote.status === "approved" && quote.validUntil < Date.now()) {
+      const lines = ctx.db
+        .select({
+          quoteLineId: quoteLines.id,
+          productId: quoteLines.productId,
+          sku: products.sku,
+          name: products.name,
+          quantity: quoteLines.quantity,
+          convertedQuantity: quoteLines.convertedQuantity,
+          unitPriceCents: quoteLines.unitPriceCents,
+        })
+        .from(quoteLines)
+        .leftJoin(products, eq(quoteLines.productId, products.id))
+        .where(eq(quoteLines.quoteId, quote.id))
+        .all();
+      return {
+        model: fail("INVALID_STATE", "报价已过期", {
+          details: {
+            quoteId: quote.id,
+            quoteNo: quote.quoteNo,
+            customerId: quote.customerId,
+            contactId: quote.contactId,
+            validUntil: quote.validUntil,
+            lines,
+          },
+          recoverable: true,
+          suggestedAction: "可按原报价明细重新生成报价；如需调整数量或配置，请先确认",
+        }),
+      };
+    }
     assertQuoteConvertible(quote, Date.now());
     const customer = ctx.db.select().from(customers).where(eq(customers.id, quote.customerId)).get();
     if (!customer) return { model: fail("NOT_FOUND", "客户不存在") };

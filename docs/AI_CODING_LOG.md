@@ -94,7 +94,7 @@
 | 层级 | 手段 | 当前结果 |
 |---|---|---|
 | 类型 | `pnpm typecheck` | shared / server / web 全部通过 |
-| 单元/集成 | `pnpm test` | shared 14 + server 146 |
+| 单元/集成 | `pnpm test` | shared 14 + server 149 |
 | 浏览器端到端 | `pnpm test:e2e` | 19 条 Playwright |
 | Agent 行为 | `pnpm eval` | 30/30 golden cases |
 | 生产构建 | `pnpm build` + `node apps/server/dist/index.js` | 通过 |

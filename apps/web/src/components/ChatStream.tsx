@@ -124,12 +124,11 @@ export function ChatStream() {
   ).length;
   const totalLatency = trace.reduce((sum, event) => sum + (event.latencyMs ?? 0), 0);
   const hasTraceError = trace.some((event) => event.status === "error");
+  const asksForConfirmation =
+    /请确认|确认后|是否继续|确认继续|确认提交/.test(lastAssistant) &&
+    !/还是|请补充|信息不足|点击可执行选项/.test(lastAssistant);
   const needsConfirmation =
-    !streaming &&
-    !pendingApprovalId &&
-    !lastQuoteId &&
-    !hasActionArtifact &&
-    /请确认|确认后|是否|吗[？?]/.test(lastAssistant);
+    !streaming && !pendingApprovalId && !lastQuoteId && !hasActionArtifact && asksForConfirmation;
 
   return (
     <section className="flex min-h-0 flex-1 flex-col">

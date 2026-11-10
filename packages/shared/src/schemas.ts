@@ -57,7 +57,7 @@ export const CreateQuoteInput = z
     idempotencyKey: z.string().min(8).max(100).optional(),
   })
   .refine((v) => v.dryRun || (!!v.confirmationToken && !!v.idempotencyKey), {
-    message: "commit requires confirmationToken and idempotencyKey",
+    message: "写操作提交必须由用户在前端确认；模型只能生成预览（dryRun=true）",
   });
 export type CreateQuoteInput = z.infer<typeof CreateQuoteInput>;
 
@@ -77,7 +77,7 @@ export const ConvertQuoteToOrderInput = z
     idempotencyKey: z.string().min(8).max(100).optional(),
   })
   .refine((v) => v.dryRun || (!!v.confirmationToken && !!v.idempotencyKey), {
-    message: "commit requires confirmationToken and idempotencyKey",
+    message: "写操作提交必须由用户在前端确认；模型只能生成预览（dryRun=true）",
   });
 export type ConvertQuoteToOrderInput = z.infer<typeof ConvertQuoteToOrderInput>;
 
@@ -95,7 +95,7 @@ export const CreateAfterSalesTicketInput = z
     idempotencyKey: z.string().min(8).max(100).optional(),
   })
   .refine((v) => v.dryRun || (!!v.confirmationToken && !!v.idempotencyKey), {
-    message: "commit requires confirmationToken and idempotencyKey",
+    message: "写操作提交必须由用户在前端确认；模型只能生成预览（dryRun=true）",
   });
 export type CreateAfterSalesTicketInput = z.infer<typeof CreateAfterSalesTicketInput>;
 
@@ -195,7 +195,7 @@ export const LogFollowUpInput = z
     idempotencyKey: z.string().min(8).max(100).optional(),
   })
   .refine((value) => value.dryRun || (!!value.confirmationToken && !!value.idempotencyKey), {
-    message: "commit requires confirmationToken and idempotencyKey",
+    message: "写操作提交必须由用户在前端确认；模型只能生成预览（dryRun=true）",
   });
 export type LogFollowUpInput = z.infer<typeof LogFollowUpInput>;
 
@@ -209,6 +209,6 @@ export const UpdateOpportunityNextActionInput = z
     idempotencyKey: z.string().min(8).max(100).optional(),
   })
   .refine((value) => value.dryRun || (!!value.confirmationToken && !!value.idempotencyKey), {
-    message: "commit requires confirmationToken and idempotencyKey",
+    message: "写操作提交必须由用户在前端确认；模型只能生成预览（dryRun=true）",
   });
 export type UpdateOpportunityNextActionInput = z.infer<typeof UpdateOpportunityNextActionInput>;

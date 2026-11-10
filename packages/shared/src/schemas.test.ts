@@ -30,7 +30,7 @@ describe("shared schemas", () => {
         lines: [{ sku: "X1", quantity: 120 }],
         dryRun: false,
       }),
-    ).toThrow(/confirmationToken/);
+    ).toThrow(/前端确认/);
   });
 
   it("requires both token and idempotency key for every write schema", () => {

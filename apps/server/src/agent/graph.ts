@@ -127,6 +127,23 @@ export function buildAgentGraph(input: {
           });
           continue;
         }
+        if (tool.kind === "write" && (args as { dryRun?: boolean })?.dryRun === false) {
+          toolMessages.push({
+            role: "tool",
+            tool_call_id: call.id,
+            name: call.function.name,
+            content: JSON.stringify({
+              ok: false,
+              error: {
+                code: "VALIDATION_ERROR",
+                message: "写操作提交必须由用户在前端确认；模型只能生成预览",
+                recoverable: true,
+                suggestedAction: "改为 dryRun=true 生成预览，等待用户在前端确认",
+              },
+            }),
+          });
+          continue;
+        }
         const nextCount = (counts[call.function.name] ?? 0) + 1;
         counts[call.function.name] = nextCount;
         if (nextCount > 3) {
@@ -147,13 +164,32 @@ export function buildAgentGraph(input: {
     })
     .addNode("respond", (state) => {
       const last = [...state.messages].reverse().find((message) => message.role === "assistant");
+      const toolMessages = state.messages.filter((message) => message.role === "tool");
+      const toolResult = (name: string) => [...toolMessages].reverse().find((message) => message.name === name);
+      const parseTool = (message: ChatMessage | undefined) => {
+        if (!message?.content) return null;
+        try {
+          return JSON.parse(message.content) as { ok?: boolean; data?: { preview?: unknown; quote?: unknown }; error?: { message?: string } };
+        } catch {
+          return null;
+        }
+      };
+      const createResult = parseTool(toolResult("create_quote"));
+      const convertResult = parseTool(toolResult("convert_quote_to_order"));
+      const quotePreviewReady = Boolean(createResult?.ok && (createResult.data?.preview || createResult.data?.quote));
+      const convertExpired = Boolean(convertResult && convertResult.ok === false && String(convertResult.error?.message ?? "").includes("过期"));
       let content: string;
       if (state.pendingConfirmation) {
-        content = "已生成预览，请在下方确认。";
+        const previewText = last?.content?.trim();
+        if (convertExpired && quotePreviewReady) {
+          content = "原报价已过期，不能直接转订单。已按原报价明细生成新报价预览，请在下方确认；确认前不会写入数据库。";
+        } else {
+          content = previewText && previewText.length > 0 ? previewText : "已生成业务预览，请在下方确认；确认前不会写入数据库。";
+        }
       } else if (state.budgetExceeded) {
         content = "这次查询需要多个业务步骤，已暂停。请先指定要查客户、库存还是报价，我按一步来处理。";
       } else {
-        content = last?.content && last.content.trim().length > 0 ? last.content : "信息不足，请补充客户、SKU 和数量。";
+        content = last?.content && last.content.trim().length > 0 ? last.content : "这一轮没有得到可执行的业务结果。请补充客户、产品或报价编号，或指定要办理的业务动作。";
       }
       content = sanitizeAssistantText(content);
       ctx.emit({ type: "token", payload: { delta: content } } as TraceEvent);

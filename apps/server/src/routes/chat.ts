@@ -81,6 +81,9 @@ export function registerChat(app: FastifyInstance, deps: { db: Db; sqlite: Datab
         const priorMessages: ChatMessage[] = priorRows.map((row) => ({
           role: row.role as ChatMessage["role"],
           content: row.content,
+          ...(row.toolCallsJson ? { tool_calls: JSON.parse(row.toolCallsJson) } : {}),
+          ...(row.name ? { name: row.name } : {}),
+          ...(row.toolCallId ? { tool_call_id: row.toolCallId } : {}),
         }));
         deps.db
           .insert(messages)
@@ -107,10 +110,30 @@ export function registerChat(app: FastifyInstance, deps: { db: Db; sqlite: Datab
             finalText: "",
           });
           const finalText = (result as { finalText?: string }).finalText;
-          if (finalText && finalText.trim().length > 0) {
+          const tail = ((result as { messages?: ChatMessage[] }).messages ?? []).slice(priorMessages.length + 1);
+          let lastAssistantContent: string | null = null;
+          let sequence = 0;
+          for (const message of tail) {
+            if (message.role === "system") continue;
+            if (message.role === "assistant") lastAssistantContent = message.content;
             deps.db
               .insert(messages)
-              .values({ id: `msg_${randomUUID()}`, conversationId, role: "assistant", content: finalText, createdAt: Date.now() })
+              .values({
+                id: `msg_${randomUUID()}`,
+                conversationId,
+                role: message.role,
+                content: message.content ?? null,
+                toolCallsJson: message.tool_calls ? JSON.stringify(message.tool_calls) : null,
+                name: message.name ?? null,
+                toolCallId: message.tool_call_id ?? null,
+                createdAt: Date.now() + sequence++,
+              })
+              .run();
+          }
+          if (finalText && finalText.trim().length > 0 && finalText !== lastAssistantContent) {
+            deps.db
+              .insert(messages)
+              .values({ id: `msg_${randomUUID()}`, conversationId, role: "assistant", content: finalText, createdAt: Date.now() + sequence })
               .run();
           }
           deps.db.update(conversations).set({ updatedAt: Date.now() }).where(eq(conversations.id, conversationId)).run();

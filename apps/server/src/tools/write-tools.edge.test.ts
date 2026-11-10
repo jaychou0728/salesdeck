@@ -49,6 +49,27 @@ function expectAppError(fn: () => unknown, code: ErrorCode) {
 }
 
 describe("write tool edge cases", () => {
+  it("returns original quote details when converting an expired quote", async () => {
+    const { ctx, db } = setup();
+    const { result } = await commitQuote(ctx, "idem-expired-quote");
+    expect(result.model.ok).toBe(true);
+    const quoteId = (result.model as any).data.quote.id as string;
+    db.update(quotes).set({ validUntil: Date.now() - 1000 }).where(eq(quotes.id, quoteId)).run();
+
+    const converted = await executeTool(tool("convert_quote_to_order"), ctx, { quoteId, dryRun: true });
+    expect(converted.model.ok).toBe(false);
+    if (!converted.model.ok) {
+      expect(converted.model.error.code).toBe("INVALID_STATE");
+      expect(converted.model.error.message).toContain("过期");
+      const details = converted.model.error.details as any;
+      expect(details.quoteId).toBe(quoteId);
+      expect(details.customerId).toBe("c_huachen");
+      expect(details.contactId).toBe("ct_zhang_1");
+      expect(details.lines[0]).toMatchObject({ sku: "X1", quantity: 120 });
+      expect(converted.model.error.suggestedAction).toContain("重新生成报价");
+    }
+  });
+
   it("blocks convert dry-run when stock is insufficient", async () => {
     const { ctx, db, events } = setup();
     const { result } = await commitQuote(ctx, "idem-stock-quote");

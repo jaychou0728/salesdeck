@@ -226,6 +226,8 @@ export const messages = sqliteTable("messages", {
   role: text("role").notNull(),
   content: text("content"),
   toolCallsJson: text("tool_calls_json"),
+  name: text("name"),
+  toolCallId: text("tool_call_id"),
   createdAt: integer("created_at").notNull(),
 });
 

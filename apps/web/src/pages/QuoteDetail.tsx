@@ -207,7 +207,7 @@ export function QuoteDetail() {
                 variant="secondary"
                 onClick={() => navigate(`/quotes/new?customerId=${quote.customerId}&contactId=${quote.contactId}&fromQuoteId=${quote.id}`)}
               >
-                <FileText size={14} /> 修订报价
+                <FileText size={14} /> {quote.status === "expired" ? "重新生成报价" : "修订报价"}
               </Button>
             ) : null}
             <Button size="sm" variant="secondary" onClick={() => setFollowUpOpen(true)}>
@@ -244,7 +244,23 @@ export function QuoteDetail() {
         </div>
       ) : null}
 
-      {!canConvert && quote.status !== "converted" ? (
+      {quote.status === "expired" ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          <div className="font-medium">报价已过期，不能转订单。</div>
+          <div className="mt-1 text-amber-700">
+            报价是版本化单据，已发出的报价不能直接修改原单；修订会生成一张新报价，原报价保留作为历史。
+          </div>
+          <div className="mt-2">
+            <Button
+              size="sm"
+              variant="amber"
+              onClick={() => navigate(`/quotes/new?customerId=${quote.customerId}&contactId=${quote.contactId}&fromQuoteId=${quote.id}`)}
+            >
+              <FileText size={14} /> 重新生成报价
+            </Button>
+          </div>
+        </div>
+      ) : !canConvert && quote.status !== "converted" ? (
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-500">
           当前报价状态为「{statusLabel(quote.status)}」，只有已批准且未过期的报价才能转订单。
         </div>
